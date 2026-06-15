@@ -166,11 +166,19 @@ h2 {
   padding: 14px;
 }
 
+.left-stack {
+  display: grid;
+  gap: 12px;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+}
+
 .visual-stack {
   display: grid;
   gap: 12px;
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 1;
 }
 
 .controls-panel,
@@ -182,13 +190,11 @@ h2 {
 
 .controls-panel {
   position: relative;
-  grid-column: 1;
-  grid-row: 1;
 }
 
 .runway-panel {
   grid-column: 3;
-  grid-row: 1 / span 2;
+  grid-row: 1;
 }
 
 .input-settings-btn {
@@ -1027,8 +1033,6 @@ button:active,
 }
 
 .message-center-panel {
-  grid-column: 1;
-  grid-row: 2;
   display: grid;
   gap: 8px;
 }
@@ -1111,6 +1115,7 @@ button:active,
     grid-template-columns: 1fr;
   }
 
+  .left-stack,
   .controls-panel,
   .visual-stack,
   .runway-panel,

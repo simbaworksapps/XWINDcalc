@@ -28,48 +28,50 @@
   </header>
 
   <main class="layout">
-    <section class="panel controls-panel">
-      <button id="settingsBtn" class="input-settings-btn settings-symbol" type="button" aria-label="Settings" title="Settings">&#9881;</button>
-      <span id="swState" hidden>Preparing</span>
+    <div class="left-stack">
+      <section class="panel controls-panel">
+        <button id="settingsBtn" class="input-settings-btn settings-symbol" type="button" aria-label="Settings" title="Settings">&#9881;</button>
+        <span id="swState" hidden>Preparing</span>
 
-      <div class="field">
-        <label for="airportSearch">ICAO / Airport Search</label>
-        <input id="airportSearch" type="search" autocomplete="off" spellcheck="false" placeholder="KMCF, EGLL, Tokyo, JFK">
-        <div id="airportResults" class="results" role="listbox"></div>
-      </div>
-
-      <div class="airport-card" id="airportCard">
-        <div class="airport-name">No airport selected</div>
-        <div class="airport-meta">Manual runway mode available</div>
-      </div>
-
-      <div class="field">
-        <label>Runway</label>
-        <select id="runwaySelect" class="runway-select"></select>
-        <div id="runwayDirection" class="runway-direction" hidden>Select a runway</div>
-      </div>
-
-      <div class="field">
-        <label for="windInput">Wind</label>
-        <input id="windInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="27015G25, 270/15G25, VRB06">
-      </div>
-    </section>
-
-    <section id="messageCenterPanel" class="message-center-panel" hidden>
-      <div id="installMessage" class="message-card">
-        <div>
-          <b>Install App</b>
-          <span>Install app to use offline.</span>
+        <div class="field">
+          <label for="airportSearch">ICAO / Airport Search</label>
+          <input id="airportSearch" type="search" autocomplete="off" spellcheck="false" placeholder="KMCF, EGLL, Tokyo, JFK">
+          <div id="airportResults" class="results" role="listbox"></div>
         </div>
-        <button id="installBtn" type="button">Install</button>
-      </div>
-      <div id="updateMessage" class="message-card" hidden>
-        <div>
-          <b>Update Available</b>
+
+        <div class="airport-card" id="airportCard">
+          <div class="airport-name">No airport selected</div>
+          <div class="airport-meta">Manual runway mode available</div>
         </div>
-        <button id="updateBtn" type="button">Update</button>
-      </div>
-    </section>
+
+        <div class="field">
+          <label>Runway</label>
+          <select id="runwaySelect" class="runway-select"></select>
+          <div id="runwayDirection" class="runway-direction" hidden>Select a runway</div>
+        </div>
+
+        <div class="field">
+          <label for="windInput">Wind</label>
+          <input id="windInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="27015G25, 270/15G25, VRB06">
+        </div>
+      </section>
+
+      <section id="messageCenterPanel" class="message-center-panel" hidden>
+        <div id="installMessage" class="message-card">
+          <div>
+            <b>Install App</b>
+            <span>Install app to use offline.</span>
+          </div>
+          <button id="installBtn" type="button">Install</button>
+        </div>
+        <div id="updateMessage" class="message-card" hidden>
+          <div>
+            <b>Update Available</b>
+          </div>
+          <button id="updateBtn" type="button">Update</button>
+        </div>
+      </section>
+    </div>
 
     <section class="visual-stack">
       <div class="panel compass-panel">
