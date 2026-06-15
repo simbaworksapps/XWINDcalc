@@ -346,7 +346,7 @@ function clockMethodAngle(result) {
 function formatClockMethodAngle(result) {
   const axisAngle = rawClockMethodAngle(result);
   if (axisAngle === null) return "--";
-  return axisAngle >= 60 ? `â‰¥60\u00B0` : `${Math.round(Math.max(0, axisAngle))}\u00B0`;
+  return axisAngle >= 60 ? `\u226560\u00B0` : `${Math.round(Math.max(0, axisAngle))}\u00B0`;
 }
 
 function classify(result) {
@@ -486,10 +486,11 @@ function updateMetrics(result, gustResult, wind) {
   const estimate = clockEstimate(clockAngle, result.speed);
   const clockText = `${estimate.text.replace(/^about /, "")} (${formatKt(estimate.value)})`;
   updateClockWindArrow(result);
+  const clockXwState = limitState(gustResult ? gustResult.cross : result.cross, els.xwindLimit.value);
   updateClockCompare([
     formatWindBadge(wind).replace("Wind ", ""),
     runwayClockText(selectedRunway),
-    `${Math.round(result.cross)}${gustText ? `/${gustText}` : ""} kt`,
+    { text: `${Math.round(result.cross)}${gustText ? `/${gustText}` : ""} kt`, state: clockXwState },
     { text: along, state: tailwindValueClass(steadyAlong) },
     `${Math.round(clockAngle)}°`,
     clockText
@@ -542,9 +543,10 @@ function renderRanking(wind) {
     const dimensions = r.length ? `${r.length}${r.width ? ` x ${r.width}` : ""} ft` : "Length unknown";
     const detail = `${hdg}° | ${dimensions}${r.surface ? ` | ${r.surface}` : ""}`;
     const windLine = formatWindBadge(wind);
+    const xwState = item.result ? limitState(Math.round(item.result.cross), els.xwindLimit.value) : "";
     const hwState = item.result ? tailwindValueClass(Math.round(item.result.signedHeadwind)) : "";
     const components = item.result
-      ? `<span>XW ${Math.round(item.result.cross)} kt</span><span class="${hwState ? `value-${hwState}` : ""}">HW ${Math.round(item.result.signedHeadwind)} kt</span><span>${Math.round(item.result.angle)}°</span>`
+      ? `<span class="${xwState ? `value-${xwState}` : ""}">XW ${Math.round(item.result.cross)} kt</span><span class="${hwState ? `value-${hwState}` : ""}">HW ${Math.round(item.result.signedHeadwind)} kt</span><span>${Math.round(item.result.angle)}°</span>`
       : `<span>XW --</span><span>HW --</span><span>--&deg;</span>`;
     row.innerHTML = `<span class="rank-left"><span class="rank-rwy">${r.ident}</span><span class="pill ${status}">${statusLabel(status, isBest)}</span></span><span><span class="rank-main">${detail}</span><span class="rank-wind">${windLine}</span><span class="rank-sub">${components}</span></span>`;
     row.addEventListener("click", () => {
