@@ -1,5 +1,5 @@
-// Curated overseas military-field runway overrides.
-// These records replace the broad worldwide fallback when a more specific public source is available.
+// Curated chart-verified runway overrides.
+// These records replace generated runway bearings when chart-published values are preferred.
 window.XWIND_AIRPORT_OVERRIDES = {
   EGUN: {
     source: "Chart verified 15JUN26",
@@ -227,7 +227,7 @@ window.XWIND_AIRPORT_OVERRIDES = {
     ]
   },
   OTBH: {
-    source: "Qatar AIM SUP 10/2024 / MAG 156",
+    source: "Chart verified 15JUN26",
     runways: [
       {
         id: "16L/34R",
@@ -254,7 +254,7 @@ window.XWIND_AIRPORT_OVERRIDES = {
     ]
   },
   OMAM: {
-    source: "SkyVector checked 15JUN26",
+    source: "Chart verified 15JUN26",
     runways: [
       {
         id: "13L/31R",
@@ -308,7 +308,7 @@ window.XWIND_AIRPORT_OVERRIDES = {
     ]
   },
   OKAS: {
-    source: "SkyVector checked 15JUN26",
+    source: "Chart verified 15JUN26",
     runways: [
       {
         id: "12L/30R",
@@ -335,7 +335,7 @@ window.XWIND_AIRPORT_OVERRIDES = {
     ]
   },
   ORAA: {
-    source: "SkyVector checked 15JUN26",
+    source: "Chart verified 15JUN26",
     runways: [
       {
         id: "08/26",
