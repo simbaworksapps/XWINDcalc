@@ -483,14 +483,15 @@ function updateMetrics(result, gustResult, wind) {
   const hState = isTail ? tailwindState(tailCheck) : "";
   setMetric(els.headwindMetric, "HW", along, `Runway ${selectedRunway.ident} ${Math.round(selectedRunway.heading).toString().padStart(3, "0")}°`, hState);
   const clockAngle = clockMethodAngle(result);
-  const estimate = clockEstimate(clockAngle, result.speed);
+  const clockSpeed = gustResult ? gustResult.speed : result.speed;
+  const estimate = clockEstimate(clockAngle, clockSpeed);
   const clockText = `${estimate.text.replace(/^about /, "")} (${formatKt(estimate.value)})`;
   updateClockWindArrow(result);
   const clockXwState = limitState(gustResult ? gustResult.cross : result.cross, els.xwindLimit.value);
   updateClockCompare([
     formatWindBadge(wind).replace("Wind ", ""),
     runwayClockText(selectedRunway),
-    { text: `${Math.round(result.cross)}${gustText ? `/${gustText}` : ""} kt`, state: clockXwState },
+    { text: `${Math.round(result.cross)}${gustText || ""} kt`, state: clockXwState },
     { text: along, state: tailwindValueClass(steadyAlong) },
     `${Math.round(clockAngle)}°`,
     clockText
@@ -524,7 +525,7 @@ function statusLabel(status, isBest) {
 }
 
 function renderRanking(wind) {
-  const ranked = scoreRunways(wind).slice(0, 8);
+  const ranked = scoreRunways(wind);
   const best = wind && !wind.variable ? ranked[0]?.runway || null : null;
   els.bestRunwayBadge.textContent = best ? `Best ${best.ident}` : "Best --";
   els.rankingList.innerHTML = "";
