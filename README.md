@@ -1,16 +1,14 @@
-# SIMBA XWIND
+# XWIND Calc
 
 Standalone offline-first aviation crosswind calculator PWA.
 
 ## Deploy
 
-Upload this folder to a GitHub repository and point Cloudflare Pages at it. The app is mostly static, with one Pages Function for METAR wind lookup.
+Upload this folder to a GitHub repository and point Cloudflare Pages at it. The app is fully static and offline-first.
 
 - Build command: leave blank
 - Output directory: `/` if this folder is the repo root, or `outputs/xwind` if deploying from the parent workspace
-- Required files: `index.html`, `styles.css`, `app.js`, `manifest.json`, `service-worker.js`, `_worker.js`, `assets/`, `icons/`, `data/`, `functions/`
-
-For Git-connected Cloudflare Pages deployments, `functions/api/metar.js` provides the METAR proxy. For direct upload deployments, `_worker.js` provides the same `/api/metar` route because dashboard drag-and-drop uploads do not compile a `functions` folder.
+- Required files: `index.html`, `styles.css`, `app.js`, `manifest.json`, `service-worker.js`, `assets/`, `icons/`, `data/`
 
 ## Run Locally
 
@@ -36,6 +34,4 @@ The current FAA cycle used here is NASR effective 2026-06-11. As of June 15, 202
 
 When deploying a new version, bump `CACHE_NAME` in `service-worker.js`. Users with the installed app will see the Update button after the new service worker is detected.
 
-## METAR Wind
-
-Airport selection attempts to load the latest METAR wind through `functions/api/metar.js`, which proxies AviationWeather because the official API does not allow direct browser CORS requests. Local `python -m http.server` testing will show manual wind fallback unless you run an equivalent local function/proxy.
+Wind entry is manual. The wind box accepts compact wind groups such as `27015G25`, `270/15G25`, and `VRB06`.

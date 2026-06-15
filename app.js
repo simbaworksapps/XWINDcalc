@@ -15,7 +15,6 @@ const els = {
   windInput: $("windInput"),
   xwindLimit: $("xwindLimit"),
   tailwindLimit: $("tailwindLimit"),
-  metarStatus: $("metarStatus"),
   compassSvg: $("compassSvg"),
   crosswindMetric: $("crosswindMetric"),
   headwindMetric: $("headwindMetric"),
@@ -233,7 +232,6 @@ function selectAirport(airport) {
   renderAirport();
   renderRunwayButtons();
   calculateAndRender();
-  loadMetarWind(airport);
   saveSettings();
 }
 
@@ -398,22 +396,6 @@ function formatAirportCount(count) {
 function renderDatabaseStatus() {
   const statusClass = FAA_CYCLE_CURRENT ? "current" : "stale";
   els.dbStatus.innerHTML = `${formatAirportCount(airports.length)} airports | ${FAA_CYCLE_NAME} <span class="cycle-date ${statusClass}">${FAA_CYCLE_DATE_LABEL}</span>`;
-}
-
-function formatLocalLoadTime(date = new Date()) {
-  return `${String(date.getHours()).padStart(2, "0")}${String(date.getMinutes()).padStart(2, "0")}L`;
-}
-
-function metarReportTime(data, raw) {
-  const sourceTime = data.obsTime || data.reportTime || data.receiptTime || data.reportTimeUtc;
-  if (sourceTime) {
-    const parsed = new Date(sourceTime);
-    if (!Number.isNaN(parsed.getTime())) {
-      return `${String(parsed.getUTCHours()).padStart(2, "0")}${String(parsed.getUTCMinutes()).padStart(2, "0")}Z`;
-    }
-  }
-  const rawTime = String(raw || "").match(/\b\d{2}(\d{2})(\d{2})Z\b/);
-  return rawTime ? `${rawTime[1]}${rawTime[2]}Z` : null;
 }
 
 function describeWind(wind) {
@@ -1153,43 +1135,6 @@ function sequenceOnEnter(items) {
       item.done();
     });
   });
-}
-
-function metarStationId(airport) {
-  return airport?.icao || (airport?.ident?.length === 4 ? airport.ident : null);
-}
-
-async function loadMetarWind(airport) {
-  const id = metarStationId(airport);
-  if (!id) {
-    els.metarStatus.textContent = "No ICAO METAR station available for this airport.";
-    return;
-  }
-  const isLocalPreview = ["127.0.0.1", "localhost", "::1"].includes(window.location.hostname);
-  if (isLocalPreview) {
-    els.metarStatus.textContent = "";
-    return;
-  }
-  els.metarStatus.textContent = `Loading ${id} METAR wind...`;
-  try {
-    const res = await fetch(`/api/metar?ids=${encodeURIComponent(id)}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`METAR route ${res.status}`);
-    const data = await res.json();
-    const raw = data.rawOb || data.raw || "";
-    const wind = parseWind(raw);
-    if (!wind) {
-      els.metarStatus.textContent = raw ? "METAR found, but no usable wind group." : "No current METAR returned.";
-      return;
-    }
-    els.windInput.value = wind.raw || raw;
-    const reportTime = metarReportTime(data, raw);
-    const timeText = reportTime || `loaded ${formatLocalLoadTime()}`;
-    els.metarStatus.textContent = `METAR ${id} ${timeText} | wind ${wind.raw || describeWind(wind)}`;
-    calculateAndRender();
-  } catch (error) {
-    const detail = error?.message ? ` (${error.message})` : "";
-    els.metarStatus.textContent = `Unable to load ${id} METAR${detail}. Enter wind manually.`;
-  }
 }
 
 function boot() {
