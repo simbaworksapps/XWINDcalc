@@ -1172,8 +1172,8 @@ async function loadMetarWind(airport) {
   }
   els.metarStatus.textContent = `Loading ${id} METAR wind...`;
   try {
-    const res = await fetch(`./api/metar?ids=${encodeURIComponent(id)}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`METAR ${res.status}`);
+    const res = await fetch(`/api/metar?ids=${encodeURIComponent(id)}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`METAR route ${res.status}`);
     const data = await res.json();
     const raw = data.rawOb || data.raw || "";
     const wind = parseWind(raw);
@@ -1186,8 +1186,9 @@ async function loadMetarWind(airport) {
     const timeText = reportTime || `loaded ${formatLocalLoadTime()}`;
     els.metarStatus.textContent = `METAR ${id} ${timeText} | wind ${wind.raw || describeWind(wind)}`;
     calculateAndRender();
-  } catch {
-    els.metarStatus.textContent = `Unable to load ${id} METAR. Enter wind manually.`;
+  } catch (error) {
+    const detail = error?.message ? ` (${error.message})` : "";
+    els.metarStatus.textContent = `Unable to load ${id} METAR${detail}. Enter wind manually.`;
   }
 }
 

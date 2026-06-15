@@ -658,6 +658,25 @@ button:active,
   color: var(--muted);
 }
 
+@media (min-width: 1181px) and (pointer: fine) {
+  .runway-panel {
+    position: sticky;
+    top: calc(86px + 12px);
+    max-height: calc(100dvh - 112px);
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .ranking-list {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+    scrollbar-color: var(--stroke-strong) transparent;
+    scrollbar-width: thin;
+  }
+}
+
 .value-warn {
   color: var(--caution) !important;
 }
