@@ -8,7 +8,9 @@ Upload this folder to a GitHub repository and point Cloudflare Pages at it. The 
 
 - Build command: leave blank
 - Output directory: `/` if this folder is the repo root, or `outputs/xwind` if deploying from the parent workspace
-- Required files: `index.html`, `styles.css`, `app.js`, `manifest.json`, `service-worker.js`, `assets/`, `icons/`, `data/`, `functions/`
+- Required files: `index.html`, `styles.css`, `app.js`, `manifest.json`, `service-worker.js`, `_worker.js`, `assets/`, `icons/`, `data/`, `functions/`
+
+For Git-connected Cloudflare Pages deployments, `functions/api/metar.js` provides the METAR proxy. For direct upload deployments, `_worker.js` provides the same `/api/metar` route because dashboard drag-and-drop uploads do not compile a `functions` folder.
 
 ## Run Locally
 
