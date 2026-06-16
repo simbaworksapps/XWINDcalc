@@ -1040,8 +1040,17 @@ button:active,
 .wind-arrow-visible,
 .wind-guide-hit,
 .wind-guide-visible {
-  cursor: pointer;
+  cursor: default;
   pointer-events: all;
+  touch-action: pan-y;
+}
+
+#compassSvg.wind-adjust-mode,
+#compassSvg.wind-adjust-mode .wind-arrow-hit,
+#compassSvg.wind-adjust-mode .wind-arrow-visible,
+#compassSvg.wind-adjust-mode .wind-guide-hit,
+#compassSvg.wind-adjust-mode .wind-guide-visible {
+  cursor: pointer;
   touch-action: none;
 }
 
