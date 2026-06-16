@@ -61,6 +61,31 @@ textarea {
   backdrop-filter: blur(14px);
 }
 
+.drag-mode-message {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 4;
+  max-width: calc(100% - 84px);
+  padding: 0;
+  color: var(--gold);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font-size: .75rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px #000;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.drag-mode-message[hidden] {
+  display: none;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -948,15 +973,29 @@ button:active,
 }
 
 .wind-arrow-hit,
-.wind-arrow-visible {
+.wind-arrow-visible,
+.wind-guide-hit,
+.wind-guide-visible {
   cursor: pointer;
   pointer-events: all;
   touch-action: none;
 }
 
 .wind-dragging .wind-arrow-hit,
-.wind-dragging .wind-arrow-visible {
+.wind-dragging .wind-arrow-visible,
+.wind-dragging .wind-guide-hit,
+.wind-dragging .wind-guide-visible {
   cursor: pointer;
+}
+
+.wind-arrow-outline {
+  display: none;
+  pointer-events: none;
+}
+
+.wind-adjust-mode .wind-arrow-outline {
+  display: block;
+  filter: drop-shadow(0 0 10px rgba(245, 200, 76, .5));
 }
 
 #clockWindArrowHead path {
@@ -996,6 +1035,31 @@ button:active,
   font-weight: 760;
 }
 
+.clock-exact-label {
+  fill: var(--dim);
+  font-size: 11px;
+  font-weight: 820;
+  opacity: .62;
+  text-transform: uppercase;
+}
+
+.clock-exact-value {
+  fill: var(--dim);
+  font-size: 12px;
+  font-weight: 820;
+  opacity: .68;
+}
+
+.clock-technique-signature {
+  fill: var(--dim);
+  font-family: "Segoe Script", "Bradley Hand ITC", "Segoe Print", cursive;
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: .04em;
+  opacity: .48;
+}
+
 .clock-compare {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1009,6 +1073,12 @@ button:active,
   background: var(--panel-2);
   border: 1px solid var(--stroke);
   border-radius: 8px;
+}
+
+.clock-compare div:last-child {
+  background: var(--button-hover);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(245, 200, 76, .26), 0 0 18px rgba(245, 200, 76, .16);
 }
 
 .clock-compare span,
@@ -1131,6 +1201,10 @@ button:active,
   display: none;
 }
 
+#clockModal {
+  padding: 0;
+}
+
 .modal-card {
   width: min(560px, 100%);
   max-height: min(92dvh, 760px);
@@ -1146,9 +1220,9 @@ button:active,
 }
 
 .clock-modal-card {
-  width: min(980px, calc(100vw - 36px));
-  height: auto;
-  max-height: calc(100dvh - 36px);
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
   grid-template-columns: minmax(380px, 460px) minmax(320px, 1fr);
   grid-template-areas:
     "head head"
@@ -1156,6 +1230,8 @@ button:active,
     "diagram explain";
   align-items: start;
   padding: clamp(14px, 2vw, 22px);
+  border: 0;
+  border-radius: 0;
 }
 
 .clock-modal-card > .section-row {
@@ -1289,8 +1365,8 @@ button:active,
   }
 
   .clock-modal-card {
-    width: calc(100vw - 36px);
-    height: calc(100dvh - 36px);
+    width: 100vw;
+    height: 100dvh;
     max-height: none;
     grid-template-columns: 1fr;
     grid-template-areas:

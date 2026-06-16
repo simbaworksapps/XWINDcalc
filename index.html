@@ -30,7 +30,6 @@
       <div class="cao-line">CAO 16JUN26</div>
     </div>
   </header>
-
   <main class="layout">
     <div class="left-stack">
       <section class="panel controls-panel">
@@ -72,7 +71,7 @@
         <div id="installMessage" class="message-card">
           <div>
             <b>Install App</b>
-            <span>Install app to use offline.</span>
+            <span>Use offline.</span>
           </div>
           <button id="installBtn" type="button">Install</button>
         </div>
@@ -89,6 +88,7 @@
       <div class="panel compass-panel">
         <div class="compass-wrap">
           <svg id="compassSvg" viewBox="0 0 420 420" role="img" aria-label="North-up runway and wind compass"></svg>
+          <div id="dragModeMessage" class="drag-mode-message" hidden>WIND ADJUST MODE</div>
           <button id="clockBtn" class="info-btn compass-info paw-icon-btn" title="Clock method" aria-label="Clock method"></button>
           <div class="corner-readout" id="readoutPanel">
             <div id="crosswindMetric"><span>XW</span><strong>--</strong><small>Select runway and wind</small></div>
@@ -172,23 +172,25 @@
         <circle cx="160" cy="160" r="96" class="clock-face"></circle>
         <g id="clockTicks"></g>
         <line x1="160" y1="160" x2="160" y2="74" class="clock-hand"></line>
-        <line x1="160" y1="160" x2="160" y2="246" class="clock-hand clock-hand-secondary"></line>
         <line id="clockWindArrow" x1="160" y1="160" x2="160" y2="74" class="clock-wind-arrow" hidden></line>
         <circle cx="160" cy="160" r="4" class="clock-hub-dot"></circle>
         <text x="160" y="108" class="clock-hour" text-anchor="middle">12</text>
         <text x="214" y="167" class="clock-hour" text-anchor="middle">3</text>
         <text x="160" y="224" class="clock-hour" text-anchor="middle">6</text>
         <text x="106" y="167" class="clock-hour" text-anchor="middle">9</text>
-        <text x="160" y="52" class="clock-label" text-anchor="middle">60°</text>
-        <text x="160" y="34" class="clock-small" text-anchor="middle">(Full Xwind)</text>
-        <text x="270" y="165" class="clock-label">15°</text>
-        <text x="282" y="183" class="clock-small" text-anchor="middle">1/4</text>
-        <text x="282" y="198" class="clock-small" text-anchor="middle">Xwind</text>
-        <text x="160" y="284" class="clock-label" text-anchor="middle">30°</text>
-        <text x="160" y="304" class="clock-small" text-anchor="middle">(1/2 Xwind)</text>
-        <text x="50" y="165" class="clock-label" text-anchor="end">45°</text>
-        <text x="38" y="183" class="clock-small" text-anchor="middle">3/4</text>
-        <text x="38" y="198" class="clock-small" text-anchor="middle">Xwind</text>
+        <text x="164" y="52" class="clock-label" text-anchor="middle">60°</text>
+        <text x="161" y="31" class="clock-small" text-anchor="middle">(Full Xwind)</text>
+        <text x="282" y="165" class="clock-label" text-anchor="middle">15°</text>
+        <text x="278" y="183" class="clock-small" text-anchor="middle">1/4</text>
+        <text x="278" y="198" class="clock-small" text-anchor="middle">Xwind</text>
+        <text x="164" y="284" class="clock-label" text-anchor="middle">30°</text>
+        <text x="161" y="304" class="clock-small" text-anchor="middle">(1/2 Xwind)</text>
+        <text x="38" y="165" class="clock-label" text-anchor="middle">45°</text>
+        <text x="34" y="183" class="clock-small" text-anchor="middle">3/4</text>
+        <text x="34" y="198" class="clock-small" text-anchor="middle">Xwind</text>
+        <text x="0" y="300" class="clock-exact-label">Exact clock</text>
+        <text id="clockExactXw" x="0" y="318" class="clock-exact-value">-- XW --</text>
+        <text x="318" y="318" class="clock-technique-signature" text-anchor="end">technique</text>
       </svg>
       <div id="clockCompare" class="clock-compare">
         <div><span>Wind</span><b>--</b></div>
@@ -196,7 +198,7 @@
         <div><span>XW</span><b>--</b></div>
         <div><span>HW</span><b>--</b></div>
         <div><span>Angle</span><b>--</b></div>
-        <div><span>Clock</span><b>--</b></div>
+        <div><span>Clock Technique</span><b>--</b></div>
       </div>
       <div class="clock-explain">
         <div>

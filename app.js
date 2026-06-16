@@ -27,6 +27,7 @@ const els = {
   bestRunwayBadge: $("bestRunwayBadge"),
   clockCompare: $("clockCompare"),
   clockWindArrow: $("clockWindArrow"),
+  clockExactXw: $("clockExactXw"),
   installBtn: $("installBtn"),
   installMessage: $("installMessage"),
   messageCenterPanel: $("messageCenterPanel"),
@@ -38,7 +39,8 @@ const els = {
   updateBtn: $("updateBtn"),
   suggestionText: $("suggestionText"),
   sendSuggestionBtn: $("sendSuggestionBtn"),
-  swState: $("swState")
+  swState: $("swState"),
+  dragModeMessage: $("dragModeMessage")
 };
 
 const SETTINGS_KEY = "simba-xwind-settings-v1";
@@ -615,12 +617,32 @@ function updateClockWindArrow(result) {
   arrow.removeAttribute("hidden");
 }
 
+function updateClockExactXw(text) {
+  if (els.clockExactXw) els.clockExactXw.textContent = text;
+}
+
+function gcd(a, b) {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+  while (y) [x, y] = [y, x % y];
+  return x || 1;
+}
+
+function clockFractionText(angle) {
+  const numerator = Math.max(0, Math.min(60, Math.round(angle)));
+  if (numerator === 0) return "0";
+  if (numerator === 60) return "1";
+  const divisor = gcd(numerator, 60);
+  return `${numerator / divisor}/${60 / divisor}`;
+}
+
 function updateMetrics(result, gustResult, wind) {
   els.windBadge.textContent = formatWindBadge(wind);
   updateSelectedRunwayBadge();
   if (!selectedRunway) {
     updateClockWindArrow(null);
     updateClockCompare(["--", "--", "--", "--", "--", "--"]);
+    updateClockExactXw("-- XW --");
     setMetric(els.crosswindMetric, "XW", "--", "Select runway", "");
     setMetric(els.headwindMetric, "HW", "--", "--", "");
     setMetric(els.angleMetric, "Angle", "--", "Clock method", "");
@@ -629,6 +651,7 @@ function updateMetrics(result, gustResult, wind) {
   if (!wind) {
     updateClockWindArrow(null);
     updateClockCompare(["--", runwayClockText(selectedRunway), "--", "--", "--", "--"]);
+    updateClockExactXw("-- XW --");
     setMetric(els.crosswindMetric, "XW", "--", "Enter wind", "");
     setMetric(els.headwindMetric, "HW", "--", "--", "");
     setMetric(els.angleMetric, "Angle", "--", "Clock method", "");
@@ -637,6 +660,7 @@ function updateMetrics(result, gustResult, wind) {
   if (wind.variable) {
     updateClockWindArrow(null);
     updateClockCompare([formatWindBadge(wind).replace("Wind ", ""), runwayClockText(selectedRunway), `0-${formatKt(wind.gust || wind.speed)}`, "VRB", "VRB", "Full possible"]);
+    updateClockExactXw("VRB XW");
     setMetric(els.crosswindMetric, "XW", `0-${formatKt(wind.gust || wind.speed)}`, "Variable wind, worst case possible", "warn");
     setMetric(els.headwindMetric, "HW", "Variable", "Use runway ranking cautiously", "warn");
     setMetric(els.angleMetric, "Angle", "VRB", "Exact angle unavailable", "warn");
@@ -657,6 +681,9 @@ function updateMetrics(result, gustResult, wind) {
   const clockSpeed = gustResult ? gustResult.speed : result.speed;
   const estimate = clockEstimate(clockAngle, clockSpeed);
   const clockText = `${estimate.text.replace(/^about /, "")} (${formatKt(estimate.value)})`;
+  const exactSteady = Math.round(result.speed * clockAngle / 60);
+  const exactGust = gustResult ? Math.round(gustResult.speed * clockAngle / 60) : null;
+  updateClockExactXw(`${clockFractionText(clockAngle)} XW ${exactGust !== null ? exactGust : exactSteady} kt`);
   updateClockWindArrow(result);
   const clockXwState = limitState(gustResult ? gustResult.cross : result.cross, els.xwindLimit.value);
   updateClockCompare([
@@ -808,6 +835,18 @@ function addCompassDefs(svg) {
   });
   marker.appendChild(svgEl("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: "#4fa8ff" }));
   defs.appendChild(marker);
+
+  const outlineMarker = svgEl("marker", {
+    id: "windArrowHeadOutline",
+    viewBox: "0 0 10 10",
+    refX: "9",
+    refY: "5",
+    markerWidth: "4.4",
+    markerHeight: "4.4",
+    orient: "auto-start-reverse"
+  });
+  outlineMarker.appendChild(svgEl("path", { d: "M 0 0 L 10 5 L 0 10 z", fill: "#f5c84c" }));
+  defs.appendChild(outlineMarker);
 
   svg.appendChild(defs);
 }
@@ -987,6 +1026,13 @@ function drawWindContactGuide(svg, cx, cy, wind, spec) {
   const contact = runwayContactPoint(cx, cy, wind.dir, spec);
   if (!contact) return;
   svg.appendChild(lineSvg(contact.end.x, contact.end.y, contact.start.x, contact.start.y, {
+    class: "wind-guide-hit",
+    stroke: "transparent",
+    "stroke-width": 24,
+    "stroke-linecap": "round"
+  }));
+  svg.appendChild(lineSvg(contact.end.x, contact.end.y, contact.start.x, contact.start.y, {
+    class: "wind-guide-visible",
     stroke: "#5ba7ff",
     "stroke-width": 2,
     "stroke-dasharray": "7 6",
@@ -1150,6 +1196,13 @@ function renderCompass(wind) {
       stroke: "transparent",
       "stroke-width": 28,
       "stroke-linecap": "round"
+    }));
+    svg.appendChild(lineSvg(sx, sy, ex, ey, {
+      class: "wind-arrow-outline",
+      stroke: "#f5c84c",
+      "stroke-width": 6,
+      "stroke-linecap": "round",
+      "marker-end": "url(#windArrowHeadOutline)"
     }));
     svg.appendChild(lineSvg(sx, sy, ex, ey, {
       class: "wind-arrow-visible",
@@ -1363,8 +1416,13 @@ function initWindKeypad() {
 function initWindDrag() {
   let dragging = false;
   let touchDragging = false;
-  const isWindArrowTarget = (target) => target?.classList?.contains("wind-arrow-hit")
-    || target?.classList?.contains("wind-arrow-visible");
+  const isWindDragTarget = (target) => ["wind-arrow-hit", "wind-arrow-visible", "wind-guide-hit", "wind-guide-visible"]
+    .some((className) => target?.classList?.contains(className));
+  const showDragMessage = () => {
+    if (!els.dragModeMessage) return;
+    els.dragModeMessage.hidden = false;
+    els.compassSvg.classList.add("wind-adjust-mode");
+  };
   const updateFromPointer = (event) => {
     const heading = compassHeadingFromPointer(event);
     if (!heading) return;
@@ -1374,11 +1432,12 @@ function initWindDrag() {
     window.getSelection?.()?.removeAllRanges();
     document.body.classList.add("wind-dragging");
     dragging = true;
+    showDragMessage();
     updateFromPointer(event);
   };
   els.compassSvg.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 && event.pointerType === "mouse") return;
-    if (!isWindArrowTarget(event.target)) return;
+    if (!isWindDragTarget(event.target)) return;
     event.preventDefault();
     els.compassSvg.setPointerCapture?.(event.pointerId);
     startDrag(event);
@@ -1389,7 +1448,7 @@ function initWindDrag() {
     updateFromPointer(event);
   });
   els.compassSvg.addEventListener("touchstart", (event) => {
-    if (!isWindArrowTarget(event.target) || !event.touches.length) return;
+    if (!isWindDragTarget(event.target) || !event.touches.length) return;
     event.preventDefault();
     touchDragging = true;
     startDrag(event.touches[0]);
@@ -1467,6 +1526,10 @@ function boot() {
   });
   [els.windInput, els.xwindLimit, els.tailwindLimit].forEach((el) => {
     el.addEventListener("input", () => {
+      if (el === els.windInput && els.dragModeMessage) {
+        els.dragModeMessage.hidden = true;
+        els.compassSvg.classList.remove("wind-adjust-mode");
+      }
       renderRunwayButtons();
       calculateAndRender();
     });
