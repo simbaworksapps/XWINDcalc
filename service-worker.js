@@ -1,18 +1,27 @@
-const CACHE_NAME = "simba-xwind-v2.5.25";
+const CACHE_NAME = "simba-xwind-v2.5.26";
 const ASSETS = [
-  "./",
-  "./index.html",
-  "./styles.css",
-  "./app.js",
-  "./manifest.json",
-  "./assets/simba.jpg",
-  "./data/airports.js",
-  "./data/military-overrides.js",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/maskable-512.png",
-  "./icons/apple-touch-icon-180.png"
+  "/",
+  "/index.html",
+  "/styles.css",
+  "/app.js",
+  "/manifest.json",
+  "/assets/simba.jpg",
+  "/data/airports.js",
+  "/data/military-overrides.js",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/maskable-512.png",
+  "/icons/apple-touch-icon-180.png"
 ];
+
+async function cachedAppShell(request) {
+  const cache = await caches.open(CACHE_NAME);
+  return (
+    await cache.match(request, { ignoreSearch: true }) ||
+    await cache.match("/", { ignoreSearch: true }) ||
+    await cache.match("/index.html", { ignoreSearch: true })
+  );
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
@@ -37,7 +46,7 @@ self.addEventListener("fetch", (event) => {
 
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match("./index.html", { ignoreSearch: true }))
+      fetch(event.request).catch(() => cachedAppShell(event.request))
     );
     return;
   }
@@ -45,11 +54,13 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(event.request, { ignoreSearch: true }).then((cached) => {
       if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      });
+      return fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request, { ignoreSearch: true }));
     })
   );
 });
