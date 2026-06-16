@@ -753,7 +753,7 @@ button:active,
 .gust-spread-badge {
   position: absolute;
   left: 0;
-  bottom: 25px;
+  bottom: 24px;
   z-index: 4;
   min-height: 22px;
   width: max-content;
@@ -762,6 +762,7 @@ button:active,
   color: #dbeafe;
   background: rgba(91, 167, 255, .14);
   border: 1px solid rgba(91, 167, 255, .55);
+  border-bottom: 0;
   border-radius: 0 8px 0 0;
   font-size: .75rem;
   font-weight: 900;
