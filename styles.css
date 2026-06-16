@@ -587,6 +587,7 @@ button:active,
   z-index: 5;
   display: flex;
   align-items: start;
+  gap: 2px;
 }
 
 .compass-controls .info-btn {
@@ -596,11 +597,11 @@ button:active,
 }
 
 .compass-controls .info-btn:first-child {
-  border-radius: 0 0 0 8px;
+  border-radius: 0 0 8px 8px;
 }
 
 .compass-controls .info-btn + .info-btn {
-  margin-left: -1px;
+  margin-left: 0;
 }
 
 .compass-controls .info-btn:last-child {
