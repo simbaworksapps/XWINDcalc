@@ -1146,6 +1146,13 @@ function renderCompass(wind) {
     const [sx, sy] = polar(cx, cy, 198, wind.dir);
     const [ex, ey] = polar(cx, cy, 191, wind.dir);
     svg.appendChild(lineSvg(sx, sy, ex, ey, {
+      class: "wind-arrow-hit",
+      stroke: "transparent",
+      "stroke-width": 28,
+      "stroke-linecap": "round"
+    }));
+    svg.appendChild(lineSvg(sx, sy, ex, ey, {
+      class: "wind-arrow-visible",
       stroke: "url(#windGradient)",
       "stroke-width": 4,
       "stroke-linecap": "round",
@@ -1355,6 +1362,8 @@ function initWindKeypad() {
 
 function initWindDrag() {
   let dragging = false;
+  const isWindArrowTarget = (target) => target?.classList?.contains("wind-arrow-hit")
+    || target?.classList?.contains("wind-arrow-visible");
   const updateFromPointer = (event) => {
     const heading = compassHeadingFromPointer(event);
     if (!heading) return;
@@ -1362,6 +1371,7 @@ function initWindDrag() {
   };
   els.compassSvg.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 && event.pointerType === "mouse") return;
+    if (!isWindArrowTarget(event.target)) return;
     event.preventDefault();
     window.getSelection?.()?.removeAllRanges();
     document.body.classList.add("wind-dragging");

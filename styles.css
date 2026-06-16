@@ -603,8 +603,8 @@ button:active,
   display: block;
   width: 100%;
   height: 100%;
-  cursor: crosshair;
-  touch-action: none;
+  cursor: default;
+  touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;
 }
@@ -945,6 +945,18 @@ button:active,
   stroke-linecap: round;
   marker-end: url("#clockWindArrowHead");
   filter: drop-shadow(0 0 5px rgba(91, 167, 255, .5));
+}
+
+.wind-arrow-hit,
+.wind-arrow-visible {
+  cursor: pointer;
+  pointer-events: all;
+  touch-action: none;
+}
+
+.wind-dragging .wind-arrow-hit,
+.wind-dragging .wind-arrow-visible {
+  cursor: pointer;
 }
 
 #clockWindArrowHead path {
