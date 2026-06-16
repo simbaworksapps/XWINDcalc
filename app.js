@@ -1417,6 +1417,7 @@ function initWindDrag() {
   let dragging = false;
   let touchDragging = false;
   let activeTouchId = null;
+  let lockedScrollY = 0;
   const isWindDragTarget = (target) => ["wind-arrow-hit", "wind-arrow-visible", "wind-guide-hit", "wind-guide-visible"]
     .some((className) => target?.classList?.contains(className));
   const showDragMessage = () => {
@@ -1433,9 +1434,19 @@ function initWindDrag() {
     const touches = [...Array.from(event.touches), ...Array.from(event.changedTouches)];
     return touches.find((touch) => touch.identifier === activeTouchId) || null;
   };
+  const lockPageScroll = () => {
+    lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.style.setProperty("--locked-scroll-y", `-${lockedScrollY}px`);
+    document.body.classList.add("wind-dragging");
+  };
+  const unlockPageScroll = () => {
+    document.body.classList.remove("wind-dragging");
+    document.body.style.removeProperty("--locked-scroll-y");
+    window.scrollTo(0, lockedScrollY);
+  };
   const startDrag = (event) => {
     window.getSelection?.()?.removeAllRanges();
-    document.body.classList.add("wind-dragging");
+    lockPageScroll();
     dragging = true;
     showDragMessage();
     updateFromPointer(event);
@@ -1467,10 +1478,11 @@ function initWindDrag() {
   };
   els.compassSvg.addEventListener("touchmove", onTouchMove, { passive: false });
   const stop = (event) => {
+    if (!dragging && !touchDragging) return;
     dragging = false;
     touchDragging = false;
     activeTouchId = null;
-    document.body.classList.remove("wind-dragging");
+    unlockPageScroll();
     window.getSelection?.()?.removeAllRanges();
     if (event.pointerId !== undefined) els.compassSvg.releasePointerCapture?.(event.pointerId);
   };

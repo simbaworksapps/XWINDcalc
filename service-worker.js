@@ -1,4 +1,4 @@
-const CACHE_NAME = "simba-xwind-v2.5.109";
+const CACHE_NAME = "simba-xwind-v2.5.110";
 const ASSETS = [
   "/",
   "/index.html",

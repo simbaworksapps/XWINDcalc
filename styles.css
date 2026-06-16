@@ -635,6 +635,10 @@ button:active,
 }
 
 .wind-dragging {
+  position: fixed;
+  inset: var(--locked-scroll-y) 0 auto 0;
+  width: 100%;
+  overflow: hidden;
   overscroll-behavior: none;
   touch-action: none;
 }
