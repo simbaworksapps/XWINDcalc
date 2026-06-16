@@ -775,9 +775,10 @@ button:active,
   right: 0;
   bottom: 24px;
   z-index: 4;
-  width: 64px;
+  min-width: 64px;
+  max-width: min(52%, 220px);
   min-height: 24px;
-  padding: 3px 4px;
+  padding: 3px 6px;
   color: var(--gold);
   background: rgba(23, 34, 51, .9);
   border: 1px solid rgba(91, 167, 255, .45);
@@ -787,6 +788,7 @@ button:active,
   font-weight: 900;
   line-height: 1.1;
   text-align: center;
+  white-space: nowrap;
   text-shadow: 0 1px 3px #000;
   box-shadow: none;
   pointer-events: none;
@@ -798,9 +800,10 @@ button:active,
   right: 0;
   bottom: 0;
   z-index: 4;
-  width: 64px;
+  min-width: 64px;
+  max-width: min(52%, 220px);
   min-height: 24px;
-  padding: 3px 4px;
+  padding: 3px 6px;
   color: #dbeafe;
   background: rgba(91, 167, 255, .16);
   border: 2px solid var(--blue);
@@ -810,6 +813,7 @@ button:active,
   font-size: .75rem;
   line-height: 1.1;
   text-align: center;
+  white-space: nowrap;
   pointer-events: none;
   user-select: none;
 }
