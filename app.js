@@ -23,12 +23,15 @@ const els = {
   headwindMetric: $("headwindMetric"),
   angleMetric: $("angleMetric"),
   rankingList: $("rankingList"),
+  gustSpreadBadge: $("gustSpreadBadge"),
   windBadge: $("windBadge"),
   selectedRunwayBadge: $("selectedRunwayBadge"),
   bestRunwayBadge: $("bestRunwayBadge"),
   clockCompare: $("clockCompare"),
+  clockExactFraction: $("clockExactFraction"),
   clockWindArrow: $("clockWindArrow"),
   clockExactXw: $("clockExactXw"),
+  clockFormulaValues: $("clockFormulaValues"),
   installBtn: $("installBtn"),
   installMessage: $("installMessage"),
   messageCenterPanel: $("messageCenterPanel"),
@@ -167,7 +170,47 @@ function signedDiff(from, to) {
 
 function renderClockTicks() {
   const ticks = document.getElementById("clockTicks");
+  const bands = document.getElementById("clockBands");
   if (!ticks || ticks.childElementCount) return;
+
+  if (bands && !bands.childElementCount) {
+    const point = (radius, deg) => {
+      const radians = deg * Math.PI / 180;
+      return {
+        x: 160 + radius * Math.sin(radians),
+        y: 160 - radius * Math.cos(radians)
+      };
+    };
+    const arcPath = (radius, startDeg, endDeg) => {
+      const start = point(radius, startDeg);
+      const end = point(radius, endDeg);
+      const largeArc = endDeg - startDeg > 180 ? 1 : 0;
+      return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+    };
+    [
+      { start: 0, end: 45, className: "zero" },
+      { start: 45, end: 135, className: "quarter" },
+      { start: 135, end: 225, className: "half" },
+      { start: 225, end: 315, className: "three-quarter" },
+      { start: 315, end: 360, className: "full" }
+    ].forEach((band) => {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", arcPath(101, band.start, band.end));
+      path.setAttribute("class", `clock-band ${band.className}`);
+      bands.appendChild(path);
+    });
+    [45, 135, 225, 315].forEach((deg) => {
+      const inner = point(98, deg);
+      const outer = point(106, deg);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", inner.x.toFixed(2));
+      line.setAttribute("y1", inner.y.toFixed(2));
+      line.setAttribute("x2", outer.x.toFixed(2));
+      line.setAttribute("y2", outer.y.toFixed(2));
+      line.setAttribute("class", "clock-crossover");
+      bands.appendChild(line);
+    });
+  }
 
   for (let i = 0; i < 60; i += 1) {
     const major = i % 5 === 0;
@@ -521,6 +564,25 @@ function clockMethodAngle(result) {
   return Math.min(60, Math.max(0, axisAngle));
 }
 
+function headingText(value) {
+  const heading = norm360(value);
+  return heading ? `${Math.round(heading).toString().padStart(3, "0")}°` : "--";
+}
+
+function clockAngleDerivation(result) {
+  if (!result?.wind || !result.runway) return "";
+  const shortHeading = (value) => {
+    const heading = norm360(value);
+    return heading ? Math.round(heading).toString().padStart(3, "0") : "--";
+  };
+  const rawAngle = Math.round(Math.abs(signedDiff(result.wind.dir, result.runway.heading)));
+  if (result.signedHeadwind < 0) {
+    const clockAngle = Math.round(180 - rawAngle);
+    return `${clockAngle}° (180-(${shortHeading(result.wind.dir)}-${shortHeading(result.runway.heading)}))`;
+  }
+  return `${rawAngle}° (${shortHeading(result.wind.dir)}-${shortHeading(result.runway.heading)})`;
+}
+
 function formatClockMethodAngle(result) {
   const axisAngle = rawClockMethodAngle(result);
   if (axisAngle === null) return "--";
@@ -564,6 +626,17 @@ function tailwindValueClass(signedHeadwind) {
 
 function formatKt(n) {
   return `${Math.round(n)} kt`;
+}
+
+function updateGustSpreadBadge(wind) {
+  if (!els.gustSpreadBadge) return;
+  const spread = wind?.gust ? wind.gust - wind.speed : 0;
+  if (spread > 0) {
+    els.gustSpreadBadge.textContent = `Gust ${formatKt(spread)}`;
+    els.gustSpreadBadge.hidden = false;
+  } else {
+    els.gustSpreadBadge.hidden = true;
+  }
 }
 
 function formatAirportCount(count) {
@@ -622,8 +695,10 @@ function updateClockWindArrow(result) {
   arrow.removeAttribute("hidden");
 }
 
-function updateClockExactXw(text) {
-  if (els.clockExactXw) els.clockExactXw.textContent = text;
+function updateClockFormula(fraction, xwText, valuesText = "-- x -- = --") {
+  if (els.clockExactFraction) els.clockExactFraction.textContent = fraction;
+  if (els.clockExactXw) els.clockExactXw.textContent = xwText;
+  if (els.clockFormulaValues) els.clockFormulaValues.textContent = valuesText;
 }
 
 function gcd(a, b) {
@@ -643,11 +718,12 @@ function clockFractionText(angle) {
 
 function updateMetrics(result, gustResult, wind) {
   els.windBadge.textContent = formatWindBadge(wind);
+  updateGustSpreadBadge(wind);
   updateSelectedRunwayBadge();
   if (!selectedRunway) {
     updateClockWindArrow(null);
     updateClockCompare(["--", "--", "--", "--", "--", "--"]);
-    updateClockExactXw("-- XW --");
+    updateClockFormula("--", "XW --");
     setMetric(els.crosswindMetric, "XW", "--", "Select runway", "");
     setMetric(els.headwindMetric, "HW", "--", "--", "");
     setMetric(els.angleMetric, "Angle", "--", "Clock method", "");
@@ -656,7 +732,7 @@ function updateMetrics(result, gustResult, wind) {
   if (!wind) {
     updateClockWindArrow(null);
     updateClockCompare(["--", runwayClockText(selectedRunway), "--", "--", "--", "--"]);
-    updateClockExactXw("-- XW --");
+    updateClockFormula("--", "XW --");
     setMetric(els.crosswindMetric, "XW", "--", "Enter wind", "");
     setMetric(els.headwindMetric, "HW", "--", "--", "");
     setMetric(els.angleMetric, "Angle", "--", "Clock method", "");
@@ -665,7 +741,7 @@ function updateMetrics(result, gustResult, wind) {
   if (wind.variable) {
     updateClockWindArrow(null);
     updateClockCompare([formatWindBadge(wind).replace("Wind ", ""), runwayClockText(selectedRunway), `0-${formatKt(wind.gust || wind.speed)}`, "VRB", "VRB", "Full possible"]);
-    updateClockExactXw("VRB XW");
+    updateClockFormula("VRB", "XW variable", `VRB x full possible = 0-${formatKt(wind.gust || wind.speed)}`);
     setMetric(els.crosswindMetric, "XW", `0-${formatKt(wind.gust || wind.speed)}`, "Variable wind, worst case possible", "warn");
     setMetric(els.headwindMetric, "HW", "Variable", "Use runway ranking cautiously", "warn");
     setMetric(els.angleMetric, "Angle", "VRB", "Exact angle unavailable", "warn");
@@ -673,12 +749,11 @@ function updateMetrics(result, gustResult, wind) {
   }
   const checkResult = gustResult || result;
   const xState = limitState(checkResult.cross, els.xwindLimit.value);
-  const gustText = gustResult ? `G${Math.round(gustResult.cross)}` : "";
-  setMetric(els.crosswindMetric, "XW", `${Math.round(result.cross)}${gustText} kt`, `${result.side} | limit ${els.xwindLimit.value}`, xState);
-  const isTail = result.tailwind > 0;
-  const steadyAlong = Math.round(result.signedHeadwind);
-  const gustAlong = gustResult ? Math.round(gustResult.signedHeadwind) : null;
-  const along = `${steadyAlong}${gustAlong !== null ? `G${gustAlong}` : ""} kt`;
+  const displayXw = Math.round(checkResult.cross);
+  setMetric(els.crosswindMetric, "XW", `${displayXw} kt`, `${result.side} | limit ${els.xwindLimit.value}`, xState);
+  const isTail = checkResult.tailwind > 0;
+  const displayAlong = Math.round(checkResult.signedHeadwind);
+  const along = `${displayAlong} kt`;
   const tailCheck = checkResult.tailwind;
   const hState = isTail ? tailwindState(tailCheck) : "";
   setMetric(els.headwindMetric, "HW", along, `Runway ${selectedRunway.ident} ${Math.round(selectedRunway.heading).toString().padStart(3, "0")}°`, hState);
@@ -688,19 +763,20 @@ function updateMetrics(result, gustResult, wind) {
   const clockText = `${estimate.text.replace(/^about /, "")} (${formatKt(estimate.value)})`;
   const exactSteady = Math.round(result.speed * clockAngle / 60);
   const exactGust = gustResult ? Math.round(gustResult.speed * clockAngle / 60) : null;
-  updateClockExactXw(`${clockFractionText(clockAngle)} XW ${exactGust !== null ? exactGust : exactSteady} kt`);
+  const clockFraction = clockFractionText(clockAngle);
+  const exactXw = exactGust !== null ? exactGust : exactSteady;
+  const clockGate = estimate.text === "full xwind" ? "1" : estimate.text;
+  updateClockFormula(clockFraction, `XW ${exactXw} kt`, `${formatKt(clockSpeed)} x ${clockGate} = ${formatKt(estimate.value)} XW`);
   updateClockWindArrow(result);
   const clockXwState = limitState(gustResult ? gustResult.cross : result.cross, els.xwindLimit.value);
   updateClockCompare([
     formatWindBadge(wind).replace("Wind ", ""),
     runwayClockText(selectedRunway),
-    { text: `${Math.round(result.cross)}${gustText || ""} kt`, state: clockXwState },
-    { text: along, state: tailwindValueClass(steadyAlong) },
-    `${Math.round(clockAngle)}°`,
+    { text: `${displayXw} kt`, state: clockXwState },
+    { text: along, state: tailwindValueClass(displayAlong) },
+    clockAngleDerivation(result),
     clockText
   ]);
-  const clockCells = els.clockCompare?.querySelectorAll("b");
-  if (clockCells?.[4]) clockCells[4].textContent = formatClockMethodAngle(result);
   setMetric(els.angleMetric, "Angle", `${Math.round(result.angle)}°`, estimate.text, "");
   }
 

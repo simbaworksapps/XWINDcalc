@@ -713,7 +713,7 @@ button:active,
   z-index: 3;
   top: 0;
   left: 0;
-  max-width: min(42%, 190px);
+  max-width: min(58%, 270px);
   display: grid;
   gap: 0;
   color: var(--text);
@@ -739,6 +739,7 @@ button:active,
   line-height: 1;
   font-weight: 900;
   color: var(--text);
+  white-space: nowrap;
 }
 
 .corner-readout small {
@@ -748,6 +749,33 @@ button:active,
 .corner-readout .good strong { color: var(--text); }
 .corner-readout .warn strong { color: var(--caution); }
 .corner-readout .bad strong { color: var(--red); }
+
+.gust-spread-badge {
+  position: absolute;
+  left: 0;
+  bottom: 25px;
+  z-index: 4;
+  min-height: 22px;
+  width: max-content;
+  max-width: 42%;
+  padding: 3px 6px;
+  color: #dbeafe;
+  background: rgba(91, 167, 255, .14);
+  border: 1px solid rgba(91, 167, 255, .55);
+  border-radius: 0 8px 0 0;
+  font-size: .75rem;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: .01em;
+  text-shadow: 0 1px 3px #000;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.gust-spread-badge[hidden] {
+  display: none;
+}
 
 .wind-badge {
   position: absolute;
@@ -996,6 +1024,41 @@ button:active,
   stroke-width: 2;
 }
 
+.clock-band {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: butt;
+  opacity: .72;
+  filter: drop-shadow(0 0 5px currentColor);
+}
+
+.clock-band.zero {
+  stroke: transparent;
+}
+
+.clock-band.quarter {
+  stroke: rgba(45, 210, 123, .62);
+}
+
+.clock-band.half {
+  stroke: rgba(91, 167, 255, .76);
+}
+
+.clock-band.three-quarter {
+  stroke: rgba(245, 200, 76, .66);
+}
+
+.clock-band.full {
+  stroke: rgba(255, 91, 87, .74);
+}
+
+.clock-crossover {
+  stroke: rgba(245, 200, 76, .76);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  opacity: .9;
+}
+
 .clock-rim {
   fill: none;
   stroke: #1f2937;
@@ -1108,6 +1171,13 @@ button:active,
   font-weight: 760;
 }
 
+.clock-note-label {
+  fill: var(--text);
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
 .clock-exact-label {
   fill: var(--dim);
   font-size: 11px;
@@ -1116,11 +1186,23 @@ button:active,
   text-transform: uppercase;
 }
 
+.clock-nerd-text {
+  fill: var(--dim);
+  font-size: 6px;
+  font-weight: 900;
+  opacity: .55;
+  letter-spacing: .08em;
+}
+
 .clock-exact-value {
   fill: var(--dim);
   font-size: 12px;
   font-weight: 820;
   opacity: .68;
+}
+
+.clock-exact-divider {
+  opacity: .72;
 }
 
 .clock-technique-signature {
@@ -1194,6 +1276,7 @@ button:active,
 .clock-explain b {
   color: var(--gold);
   font-size: .92rem;
+  line-height: 1.05;
 }
 
 .clock-explain span {
