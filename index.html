@@ -27,7 +27,7 @@
       </div>
     </div>
     <div class="header-actions">
-      <div class="cao-line">CAO 15JUN26</div>
+      <div class="cao-line">CAO 16JUN26</div>
     </div>
   </header>
 
@@ -39,7 +39,10 @@
 
         <div class="field">
           <label for="airportSearch">ICAO / Airport Search</label>
-          <input id="airportSearch" type="search" autocomplete="off" spellcheck="false" placeholder="KMCF, EGLL, Tokyo, JFK">
+          <div class="search-input-row">
+            <input id="airportSearch" type="search" autocomplete="off" spellcheck="false" placeholder="KMCF, EGLL, Tokyo, JFK">
+            <button id="favoritesBtn" class="favorite-toggle" type="button" aria-label="Show starred fields" title="Show starred fields">☆</button>
+          </div>
           <div id="airportResults" class="results" role="listbox"></div>
         </div>
 
@@ -56,7 +59,12 @@
 
         <div class="field">
           <label for="windInput">Wind</label>
-          <input id="windInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="27015G25, 270/15G25, VRB06">
+          <input id="windInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="27015G25, 270/15G25, VRB06">
+          <div id="windKeypad" class="wind-keypad" hidden>
+            <button type="button" data-wind-key="G">G</button>
+            <button type="button" data-wind-key="/">/</button>
+            <button type="button" data-wind-key="VRB">VRB</button>
+          </div>
         </div>
       </section>
 
@@ -81,7 +89,7 @@
       <div class="panel compass-panel">
         <div class="compass-wrap">
           <svg id="compassSvg" viewBox="0 0 420 420" role="img" aria-label="North-up runway and wind compass"></svg>
-          <button id="clockBtn" class="info-btn compass-info" title="Clock method" aria-label="Clock method">i</button>
+          <button id="clockBtn" class="info-btn compass-info paw-icon-btn" title="Clock method" aria-label="Clock method"></button>
           <div class="corner-readout" id="readoutPanel">
             <div id="crosswindMetric"><span>XW</span><strong>--</strong><small>Select runway and wind</small></div>
             <div id="headwindMetric"><span>HW</span><strong>--</strong><small>--</small></div>

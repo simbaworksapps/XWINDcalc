@@ -4,6 +4,7 @@ const els = {
   dbStatus: $("dbStatus"),
   airportSearch: $("airportSearch"),
   airportResults: $("airportResults"),
+  favoritesBtn: $("favoritesBtn"),
   airportCard: $("airportCard"),
   runwaySelect: $("runwaySelect"),
   runwayDirection: $("runwayDirection"),
@@ -13,6 +14,7 @@ const els = {
   manualHeading: $("manualHeading"),
   applyManualBtn: $("applyManualBtn"),
   windInput: $("windInput"),
+  windKeypad: $("windKeypad"),
   xwindLimit: $("xwindLimit"),
   tailwindLimit: $("tailwindLimit"),
   compassSvg: $("compassSvg"),
@@ -40,6 +42,8 @@ const els = {
 };
 
 const SETTINGS_KEY = "simba-xwind-settings-v1";
+const FAVORITES_KEY = "simba-xwind-favorites-v1";
+const FAVORITES_HINT_KEY = "simba-xwind-favorites-hint-v1";
 const FAA_CYCLE_NAME = "FAA NASR";
 const FAA_CYCLE_DATE_LABEL = "11JUN26";
 const FAA_CYCLE_CURRENT = true;
@@ -65,6 +69,9 @@ let selectedAirport = null;
 let selectedRunway = null;
 let deferredInstallPrompt = null;
 let waitingWorker = null;
+let favoriteAirports = loadFavorites();
+let showingFavorites = false;
+let favoriteHintSeen = localStorage.getItem(FAVORITES_HINT_KEY) === "1";
 
 const defaultSettings = {
   xwindLimit: 25,
@@ -89,6 +96,54 @@ function saveSettings() {
     wind: els.windInput.value
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function loadFavorites() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]");
+    return new Set(Array.isArray(saved) ? saved.map((id) => String(id).toUpperCase()) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveFavorites() {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favoriteAirports].sort()));
+}
+
+function isFavoriteAirport(airport) {
+  return favoriteAirports.has(String(airport?.ident || "").toUpperCase());
+}
+
+function favoriteAirportList() {
+  return [...favoriteAirports]
+    .map((ident) => airports.find((airport) => airport.ident === ident))
+    .filter(Boolean)
+    .sort((a, b) => a.ident.localeCompare(b.ident));
+}
+
+function updateFavoritesButton() {
+  if (!els.favoritesBtn) return;
+  els.favoritesBtn.textContent = showingFavorites ? "★" : "☆";
+  els.favoritesBtn.classList.toggle("active", showingFavorites);
+  els.favoritesBtn.setAttribute("aria-label", showingFavorites ? "Hide starred fields" : "Show starred fields");
+  els.favoritesBtn.title = showingFavorites ? "Hide starred fields" : "Show starred fields";
+}
+
+function toggleFavoriteAirport(airport) {
+  if (!airport?.ident) return;
+  const ident = airport.ident.toUpperCase();
+  if (favoriteAirports.has(ident)) favoriteAirports.delete(ident);
+  else favoriteAirports.add(ident);
+  saveFavorites();
+  if (showingFavorites) renderFavorites();
+  else renderSearch();
+}
+
+function markFavoriteHintSeen() {
+  if (favoriteHintSeen) return;
+  favoriteHintSeen = true;
+  localStorage.setItem(FAVORITES_HINT_KEY, "1");
 }
 
 function norm360(value) {
@@ -143,6 +198,50 @@ function parseWind(raw) {
   const gust = match[3] ? Number(match[3]) : null;
   if (!dir || speed < 0 || speed > 99 || (gust !== null && gust < speed)) return null;
   return { variable: false, dir, speed, gust, raw: value };
+}
+
+function windInputParts() {
+  const value = String(els.windInput.value || "").trim().toUpperCase().replace(/\s+/g, "");
+  const parsed = parseWind(value);
+  const fallback = value.match(/(?:VRB|\d{3})\/?(\d{1,2})(?:G(\d{1,2}))?/);
+  return {
+    speed: parsed?.speed ?? (fallback ? Number(fallback[1]) : 10),
+    gust: parsed?.gust ?? (fallback?.[2] ? Number(fallback[2]) : null),
+    usesSlash: value.includes("/"),
+    hasKt: /KT$/.test(value)
+  };
+}
+
+function formatWindWithDirection(heading) {
+  const parts = windInputParts();
+  const dir = String(Math.round(norm360(heading))).padStart(3, "0");
+  const speed = String(Math.max(0, Math.min(99, Number(parts.speed) || 10))).padStart(2, "0");
+  const gust = parts.gust ? `G${String(Math.max(0, Math.min(99, Number(parts.gust)))).padStart(2, "0")}` : "";
+  return `${dir}${parts.usesSlash ? "/" : ""}${speed}${gust}${parts.hasKt ? "KT" : ""}`;
+}
+
+function setWindDirection(heading) {
+  els.windInput.value = formatWindWithDirection(heading);
+  calculateAndRender();
+}
+
+function insertWindText(text) {
+  const input = els.windInput;
+  input.focus({ preventScroll: true });
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  input.setRangeText(String(text).toUpperCase(), start, end, "end");
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function backspaceWindText() {
+  const input = els.windInput;
+  input.focus({ preventScroll: true });
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  if (start !== end) input.setRangeText("", start, end, "end");
+  else if (start > 0) input.setRangeText("", start - 1, start, "end");
+  input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function runwayEndpoints(airport) {
@@ -235,20 +334,91 @@ function selectAirport(airport) {
   saveSettings();
 }
 
+function renderAirportRow(airport) {
+  const row = document.createElement("div");
+  row.className = "result-row";
+  let longPressTimer = null;
+  let didLongPress = false;
+
+  const item = document.createElement("button");
+  item.type = "button";
+  item.className = "result-item";
+  item.innerHTML = `<span class="result-ident">${airport.ident}</span><span class="result-copy"><span class="result-name">${airport.name}</span><span class="result-meta">${airportLabel(airport)} | ${runwayPairSummary(airport)}</span></span>`;
+  item.addEventListener("pointerdown", () => {
+    didLongPress = false;
+    row.classList.add("pressing");
+    longPressTimer = window.setTimeout(() => {
+      didLongPress = true;
+      row.classList.remove("pressing");
+      toggleFavoriteAirport(airport);
+    }, 620);
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
+    item.addEventListener(eventName, () => {
+      row.classList.remove("pressing");
+      if (longPressTimer) window.clearTimeout(longPressTimer);
+      longPressTimer = null;
+    });
+  });
+  item.addEventListener("click", (event) => {
+    if (didLongPress) {
+      event.preventDefault();
+      didLongPress = false;
+      return;
+    }
+    selectAirport(airport);
+  });
+
+  const star = document.createElement("button");
+  star.type = "button";
+  star.className = `favorite-star${isFavoriteAirport(airport) ? " active" : ""}`;
+  star.textContent = isFavoriteAirport(airport) ? "★" : "☆";
+  star.setAttribute("aria-label", isFavoriteAirport(airport) ? `Unstar ${airport.ident}` : `Star ${airport.ident}`);
+  star.title = isFavoriteAirport(airport) ? `Unstar ${airport.ident}` : `Star ${airport.ident}`;
+  star.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleFavoriteAirport(airport);
+  });
+
+  row.appendChild(item);
+  row.appendChild(star);
+  return row;
+}
+
 function renderSearch() {
+  showingFavorites = false;
+  updateFavoritesButton();
   const hits = searchAirports(els.airportSearch.value);
   els.airportResults.innerHTML = "";
   if (!hits.length) {
     els.airportResults.classList.remove("open");
     return;
   }
+  if (!favoriteHintSeen) {
+    const hint = document.createElement("div");
+    hint.className = "results-hint";
+    hint.textContent = "Hold a result to star or unstar it.";
+    els.airportResults.appendChild(hint);
+    markFavoriteHintSeen();
+  }
   for (const a of hits) {
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className = "result-item";
-    item.innerHTML = `<span class="result-ident">${a.ident}</span><span class="result-copy"><span class="result-name">${a.name}</span><span class="result-meta">${airportLabel(a)} | ${runwayPairSummary(a)}</span></span>`;
-    item.addEventListener("click", () => selectAirport(a));
-    els.airportResults.appendChild(item);
+    els.airportResults.appendChild(renderAirportRow(a));
+  }
+  els.airportResults.classList.add("open");
+}
+
+function renderFavorites() {
+  showingFavorites = true;
+  updateFavoritesButton();
+  const favorites = favoriteAirportList();
+  els.airportResults.innerHTML = "";
+  if (!favorites.length) {
+    const empty = document.createElement("div");
+    empty.className = "results-empty";
+    empty.textContent = "No starred fields yet.";
+    els.airportResults.appendChild(empty);
+  } else {
+    favorites.forEach((airport) => els.airportResults.appendChild(renderAirportRow(airport)));
   }
   els.airportResults.classList.add("open");
 }
@@ -260,6 +430,7 @@ function renderAirport() {
   const fallback = isFallbackAirport(selectedAirport)
     ? `<div class="fallback-note">Fallback data: verify runway heading with current charts.</div>`
     : "";
+  els.airportCard.classList.toggle("active", Boolean(selectedAirport));
   els.airportCard.innerHTML = `<div class="airport-name">${name}</div><div class="airport-meta">${meta}</div>${fallback}`;
 }
 
@@ -572,6 +743,19 @@ function selectBestRunway() {
 function polar(cx, cy, radius, heading) {
   const rad = (heading - 90) * Math.PI / 180;
   return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
+}
+
+function compassHeadingFromPointer(event) {
+  const svg = els.compassSvg;
+  if (!svg) return null;
+  const point = svg.createSVGPoint();
+  point.x = event.clientX;
+  point.y = event.clientY;
+  const local = point.matrixTransform(svg.getScreenCTM().inverse());
+  const dx = local.x - 210;
+  const dy = local.y - 210;
+  if (Math.hypot(dx, dy) < 24) return null;
+  return norm360(Math.round(Math.atan2(dy, dx) * 180 / Math.PI + 90));
 }
 
 function lineSvg(x1, y1, x2, y2, attrs = {}) {
@@ -1016,12 +1200,6 @@ function refreshMessageCenter() {
   els.messageCenterPanel.hidden = false;
 }
 
-async function clearAppCaches() {
-  if (!("caches" in window)) return;
-  const keys = await caches.keys();
-  await Promise.all(keys.map((key) => caches.delete(key)));
-}
-
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) {
     els.swState.textContent = "Browser only";
@@ -1140,6 +1318,72 @@ function sequenceOnEnter(items) {
   });
 }
 
+function initWindKeypad() {
+  if (!els.windKeypad) return;
+  const show = () => {
+    els.windKeypad.hidden = false;
+  };
+  const hide = () => {
+    els.windKeypad.hidden = true;
+  };
+  els.windInput.addEventListener("focus", show);
+  els.windInput.addEventListener("click", show);
+  els.windKeypad.addEventListener("pointerdown", (event) => event.preventDefault());
+  els.windKeypad.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    const key = button.dataset.windKey;
+    const action = button.dataset.windAction;
+    if (key) insertWindText(key);
+    if (action === "backspace") backspaceWindText();
+    if (action === "clear") {
+      els.windInput.value = "";
+      els.windInput.dispatchEvent(new Event("input", { bubbles: true }));
+      els.windInput.focus({ preventScroll: true });
+    }
+    if (action === "done") {
+      calculateAndRender();
+      hide();
+      els.windInput.blur();
+    }
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (event.target === els.windInput || els.windKeypad.contains(event.target)) return;
+    hide();
+  });
+}
+
+function initWindDrag() {
+  let dragging = false;
+  const updateFromPointer = (event) => {
+    const heading = compassHeadingFromPointer(event);
+    if (!heading) return;
+    setWindDirection(heading);
+  };
+  els.compassSvg.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 && event.pointerType === "mouse") return;
+    event.preventDefault();
+    window.getSelection?.()?.removeAllRanges();
+    document.body.classList.add("wind-dragging");
+    dragging = true;
+    els.compassSvg.setPointerCapture?.(event.pointerId);
+    updateFromPointer(event);
+  });
+  els.compassSvg.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    event.preventDefault();
+    updateFromPointer(event);
+  });
+  const stop = (event) => {
+    dragging = false;
+    document.body.classList.remove("wind-dragging");
+    window.getSelection?.()?.removeAllRanges();
+    els.compassSvg.releasePointerCapture?.(event.pointerId);
+  };
+  els.compassSvg.addEventListener("pointerup", stop);
+  els.compassSvg.addEventListener("pointercancel", stop);
+}
+
 function boot() {
   renderDatabaseStatus();
   const settings = loadSettings();
@@ -1157,8 +1401,19 @@ function boot() {
   els.airportSearch.addEventListener("input", renderSearch);
   els.airportSearch.addEventListener("focus", selectSearchText);
   els.airportSearch.addEventListener("click", selectSearchText);
+  els.favoritesBtn.addEventListener("click", () => {
+    if (showingFavorites) {
+      showingFavorites = false;
+      updateFavoritesButton();
+      els.airportResults.classList.remove("open");
+    } else {
+      renderFavorites();
+    }
+  });
   els.windInput.addEventListener("focus", () => requestAnimationFrame(() => els.windInput.select()));
   els.windInput.addEventListener("click", () => requestAnimationFrame(() => els.windInput.select()));
+  initWindKeypad();
+  initWindDrag();
   els.airportSearch.addEventListener("keydown", (event) => {
     if (event.key !== "Enter") return;
     event.preventDefault();
@@ -1210,7 +1465,6 @@ function boot() {
     { el: els.tailwindLimit, done: () => { calculateAndRender(); closeModal("settingsModal"); } }
   ]);
   els.updateBtn.addEventListener("click", async () => {
-    await clearAppCaches();
     if (waitingWorker) waitingWorker.postMessage({ type: "SKIP_WAITING" });
     else window.location.reload();
   });
