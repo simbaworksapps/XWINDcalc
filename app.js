@@ -1362,6 +1362,7 @@ function initWindKeypad() {
 
 function initWindDrag() {
   let dragging = false;
+  let touchDragging = false;
   const isWindArrowTarget = (target) => target?.classList?.contains("wind-arrow-hit")
     || target?.classList?.contains("wind-arrow-visible");
   const updateFromPointer = (event) => {
@@ -1369,29 +1370,46 @@ function initWindDrag() {
     if (!heading) return;
     setWindDirection(heading);
   };
+  const startDrag = (event) => {
+    window.getSelection?.()?.removeAllRanges();
+    document.body.classList.add("wind-dragging");
+    dragging = true;
+    updateFromPointer(event);
+  };
   els.compassSvg.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 && event.pointerType === "mouse") return;
     if (!isWindArrowTarget(event.target)) return;
     event.preventDefault();
-    window.getSelection?.()?.removeAllRanges();
-    document.body.classList.add("wind-dragging");
-    dragging = true;
     els.compassSvg.setPointerCapture?.(event.pointerId);
-    updateFromPointer(event);
+    startDrag(event);
   });
   els.compassSvg.addEventListener("pointermove", (event) => {
     if (!dragging) return;
     event.preventDefault();
     updateFromPointer(event);
   });
+  els.compassSvg.addEventListener("touchstart", (event) => {
+    if (!isWindArrowTarget(event.target) || !event.touches.length) return;
+    event.preventDefault();
+    touchDragging = true;
+    startDrag(event.touches[0]);
+  }, { passive: false });
+  els.compassSvg.addEventListener("touchmove", (event) => {
+    if (!touchDragging || !event.touches.length) return;
+    event.preventDefault();
+    updateFromPointer(event.touches[0]);
+  }, { passive: false });
   const stop = (event) => {
     dragging = false;
+    touchDragging = false;
     document.body.classList.remove("wind-dragging");
     window.getSelection?.()?.removeAllRanges();
-    els.compassSvg.releasePointerCapture?.(event.pointerId);
+    if (event.pointerId !== undefined) els.compassSvg.releasePointerCapture?.(event.pointerId);
   };
   els.compassSvg.addEventListener("pointerup", stop);
   els.compassSvg.addEventListener("pointercancel", stop);
+  els.compassSvg.addEventListener("touchend", stop);
+  els.compassSvg.addEventListener("touchcancel", stop);
 }
 
 function boot() {
