@@ -10,6 +10,7 @@ const els = {
   runwayDirection: $("runwayDirection"),
   settingsBtn: $("settingsBtn"),
   clockBtn: $("clockBtn"),
+  windAdjustBtn: $("windAdjustBtn"),
   manualIdent: $("manualIdent"),
   manualHeading: $("manualHeading"),
   applyManualBtn: $("applyManualBtn"),
@@ -74,6 +75,10 @@ let waitingWorker = null;
 let favoriteAirports = loadFavorites();
 let showingFavorites = false;
 let favoriteHintSeen = localStorage.getItem(FAVORITES_HINT_KEY) === "1";
+let windAdjustMode = false;
+let pageScrollLocked = false;
+let lockedScrollY = 0;
+let windAdjustLockTimer = null;
 
 const defaultSettings = {
   xwindLimit: 25,
@@ -1413,17 +1418,62 @@ function initWindKeypad() {
   });
 }
 
+function lockPageScroll() {
+  if (pageScrollLocked) return;
+  lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.body.style.setProperty("--locked-scroll-y", `-${lockedScrollY}px`);
+  document.body.classList.add("wind-scroll-locked");
+  pageScrollLocked = true;
+}
+
+function unlockPageScroll() {
+  if (!pageScrollLocked) return;
+  document.body.classList.remove("wind-scroll-locked");
+  document.body.style.removeProperty("--locked-scroll-y");
+  pageScrollLocked = false;
+  window.scrollTo(0, lockedScrollY);
+}
+
+function scrollCompassToTop() {
+  const headerHeight = document.querySelector(".app-header")?.getBoundingClientRect().height || 0;
+  const compassTop = els.compassSvg.getBoundingClientRect().top + (window.scrollY || document.documentElement.scrollTop || 0);
+  window.scrollTo({ top: Math.max(0, compassTop - headerHeight), behavior: "auto" });
+}
+
+function setWindAdjustMode(enabled) {
+  const nextMode = Boolean(enabled);
+  const modeChanged = windAdjustMode !== nextMode;
+  windAdjustMode = nextMode;
+  if (windAdjustLockTimer) {
+    clearTimeout(windAdjustLockTimer);
+    windAdjustLockTimer = null;
+  }
+  els.dragModeMessage.hidden = !windAdjustMode;
+  els.compassSvg.classList.toggle("wind-adjust-mode", windAdjustMode);
+  els.windAdjustBtn.classList.toggle("active", windAdjustMode);
+  els.windAdjustBtn.setAttribute("aria-pressed", String(windAdjustMode));
+  els.windAdjustBtn.title = windAdjustMode ? "Exit wind adjust mode" : "Wind adjust mode";
+  els.windAdjustBtn.setAttribute("aria-label", els.windAdjustBtn.title);
+  if (windAdjustMode && modeChanged) {
+    scrollCompassToTop();
+    windAdjustLockTimer = window.setTimeout(() => {
+      if (windAdjustMode) lockPageScroll();
+    }, 0);
+  } else if (windAdjustMode && !pageScrollLocked) {
+    lockPageScroll();
+  } else {
+    unlockPageScroll();
+  }
+}
+
 function initWindDrag() {
   let dragging = false;
   let touchDragging = false;
   let activeTouchId = null;
-  let lockedScrollY = 0;
   const isWindDragTarget = (target) => ["wind-arrow-hit", "wind-arrow-visible", "wind-guide-hit", "wind-guide-visible"]
     .some((className) => target?.classList?.contains(className));
   const showDragMessage = () => {
-    if (!els.dragModeMessage) return;
-    els.dragModeMessage.hidden = false;
-    els.compassSvg.classList.add("wind-adjust-mode");
+    setWindAdjustMode(true);
   };
   const updateFromPointer = (event) => {
     const heading = compassHeadingFromPointer(event);
@@ -1434,26 +1484,18 @@ function initWindDrag() {
     const touches = [...Array.from(event.touches), ...Array.from(event.changedTouches)];
     return touches.find((touch) => touch.identifier === activeTouchId) || null;
   };
-  const lockPageScroll = () => {
-    lockedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    document.body.style.setProperty("--locked-scroll-y", `-${lockedScrollY}px`);
-    document.body.classList.add("wind-dragging");
-  };
-  const unlockPageScroll = () => {
-    document.body.classList.remove("wind-dragging");
-    document.body.style.removeProperty("--locked-scroll-y");
-    window.scrollTo(0, lockedScrollY);
-  };
   const startDrag = (event) => {
     window.getSelection?.()?.removeAllRanges();
-    lockPageScroll();
+    const wasAdjusting = windAdjustMode;
+    document.body.classList.add("wind-dragging");
     dragging = true;
     showDragMessage();
+    if (wasAdjusting) lockPageScroll();
     updateFromPointer(event);
   };
   els.compassSvg.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 && event.pointerType === "mouse") return;
-    if (!isWindDragTarget(event.target)) return;
+    if (!windAdjustMode && !isWindDragTarget(event.target)) return;
     event.preventDefault();
     els.compassSvg.setPointerCapture?.(event.pointerId);
     startDrag(event);
@@ -1464,7 +1506,7 @@ function initWindDrag() {
     updateFromPointer(event);
   });
   els.compassSvg.addEventListener("touchstart", (event) => {
-    if (!isWindDragTarget(event.target) || !event.touches.length) return;
+    if ((!windAdjustMode && !isWindDragTarget(event.target)) || !event.touches.length) return;
     event.preventDefault();
     touchDragging = true;
     activeTouchId = event.changedTouches[0]?.identifier ?? event.touches[0].identifier;
@@ -1482,13 +1524,15 @@ function initWindDrag() {
     dragging = false;
     touchDragging = false;
     activeTouchId = null;
-    unlockPageScroll();
+    document.body.classList.remove("wind-dragging");
+    if (!windAdjustMode) unlockPageScroll();
     window.getSelection?.()?.removeAllRanges();
     if (event.pointerId !== undefined) els.compassSvg.releasePointerCapture?.(event.pointerId);
   };
   const onDocumentTouchMove = (event) => {
-    if (!touchDragging) return;
+    if (!windAdjustMode && !touchDragging) return;
     event.preventDefault();
+    if (!touchDragging) return;
     const touch = activeTouch(event);
     if (touch) updateFromPointer(touch);
   };
@@ -1496,13 +1540,36 @@ function initWindDrag() {
     if (!touchDragging) return;
     if (activeTouchId === null || activeTouch(event)) stop(event);
   };
+  const onDocumentPointerMove = (event) => {
+    if (!dragging) return;
+    event.preventDefault();
+    updateFromPointer(event);
+  };
+  const onDocumentPointerEnd = (event) => {
+    if (!dragging) return;
+    stop(event);
+  };
+  const onDocumentWheel = (event) => {
+    if (!windAdjustMode) return;
+    event.preventDefault();
+  };
+  const onDocumentKeydown = (event) => {
+    if (!windAdjustMode) return;
+    if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) return;
+    event.preventDefault();
+  };
   els.compassSvg.addEventListener("pointerup", stop);
   els.compassSvg.addEventListener("pointercancel", stop);
   els.compassSvg.addEventListener("touchend", stop);
   els.compassSvg.addEventListener("touchcancel", stop);
+  document.addEventListener("pointermove", onDocumentPointerMove, { passive: false, capture: true });
+  document.addEventListener("pointerup", onDocumentPointerEnd, { passive: false, capture: true });
+  document.addEventListener("pointercancel", onDocumentPointerEnd, { passive: false, capture: true });
   document.addEventListener("touchmove", onDocumentTouchMove, { passive: false, capture: true });
   document.addEventListener("touchend", onDocumentTouchEnd, { passive: false, capture: true });
   document.addEventListener("touchcancel", onDocumentTouchEnd, { passive: false, capture: true });
+  document.addEventListener("wheel", onDocumentWheel, { passive: false, capture: true });
+  document.addEventListener("keydown", onDocumentKeydown, { capture: true });
 }
 
 function boot() {
@@ -1533,6 +1600,7 @@ function boot() {
   });
   els.windInput.addEventListener("focus", () => requestAnimationFrame(() => els.windInput.select()));
   els.windInput.addEventListener("click", () => requestAnimationFrame(() => els.windInput.select()));
+  els.windAdjustBtn.addEventListener("click", () => setWindAdjustMode(!windAdjustMode));
   initWindKeypad();
   initWindDrag();
   els.airportSearch.addEventListener("keydown", (event) => {
@@ -1560,10 +1628,7 @@ function boot() {
   });
   [els.windInput, els.xwindLimit, els.tailwindLimit].forEach((el) => {
     el.addEventListener("input", () => {
-      if (el === els.windInput && els.dragModeMessage) {
-        els.dragModeMessage.hidden = true;
-        els.compassSvg.classList.remove("wind-adjust-mode");
-      }
+      if (el === els.windInput) setWindAdjustMode(false);
       renderRunwayButtons();
       calculateAndRender();
     });

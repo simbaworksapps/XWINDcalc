@@ -580,11 +580,47 @@ button:active,
   cursor: pointer;
 }
 
-.compass-info {
+.compass-controls {
   position: absolute;
   top: 0;
   right: 0;
   z-index: 5;
+  display: flex;
+  align-items: start;
+}
+
+.compass-controls .info-btn {
+  position: relative;
+  flex: 0 0 auto;
+  border-radius: 0;
+}
+
+.compass-controls .info-btn:first-child {
+  border-radius: 0 0 0 8px;
+}
+
+.compass-controls .info-btn + .info-btn {
+  margin-left: -1px;
+}
+
+.compass-controls .info-btn:last-child {
+  border-radius: 0 8px 0 8px;
+}
+
+.wind-adjust-btn::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M9 19h29c6.5 0 10-3.2 10-7.4 0-3.3-2.5-5.6-5.7-5.6-3 0-5.2 1.7-6.2 4.4' fill='none' stroke='black' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M9 32h43' fill='none' stroke='black' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M9 45h28c6.8 0 10.8 3.2 10.8 7.2 0 3.4-2.6 5.8-6 5.8-3 0-5.3-1.7-6.4-4.5' fill='none' stroke='black' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M9 19h29c6.5 0 10-3.2 10-7.4 0-3.3-2.5-5.6-5.7-5.6-3 0-5.2 1.7-6.2 4.4' fill='none' stroke='black' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M9 32h43' fill='none' stroke='black' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M9 45h28c6.8 0 10.8 3.2 10.8 7.2 0 3.4-2.6 5.8-6 5.8-3 0-5.3-1.7-6.4-4.5' fill='none' stroke='black' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.wind-adjust-btn.active {
+  color: var(--gold);
+  background: rgba(245, 200, 76, .12);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(245, 200, 76, .38), 0 0 14px rgba(245, 200, 76, .24);
 }
 
 .paw-icon-btn::before {
@@ -634,20 +670,31 @@ button:active,
   user-select: none;
 }
 
-.wind-dragging {
+.wind-scroll-locked {
   position: fixed;
   inset: var(--locked-scroll-y) 0 auto 0;
   width: 100%;
   overflow: hidden;
+}
+
+.wind-scroll-locked,
+.wind-dragging {
   overscroll-behavior: none;
   touch-action: none;
 }
 
+.wind-scroll-locked #compassSvg,
 .wind-dragging #compassSvg {
   touch-action: none;
 }
 
+#compassSvg.wind-adjust-mode {
+  touch-action: none;
+}
+
 #compassSvg *,
+.wind-scroll-locked,
+.wind-scroll-locked *,
 .wind-dragging,
 .wind-dragging * {
   -webkit-user-select: none;

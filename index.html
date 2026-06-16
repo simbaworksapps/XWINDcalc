@@ -88,8 +88,11 @@
       <div class="panel compass-panel">
         <div class="compass-wrap">
           <svg id="compassSvg" viewBox="0 0 420 420" role="img" aria-label="North-up runway and wind compass"></svg>
-          <div id="dragModeMessage" class="drag-mode-message" hidden>WIND ADJUST MODE</div>
-          <button id="clockBtn" class="info-btn compass-info paw-icon-btn" title="Clock method" aria-label="Clock method"></button>
+          <div id="dragModeMessage" class="drag-mode-message" hidden>WIND OVERRIDE - SCROLL OFF</div>
+          <div class="compass-controls">
+            <button id="windAdjustBtn" class="info-btn wind-adjust-btn" type="button" title="Wind adjust mode" aria-label="Wind adjust mode" aria-pressed="false"></button>
+            <button id="clockBtn" class="info-btn paw-icon-btn" type="button" title="Clock method" aria-label="Clock method"></button>
+          </div>
           <div class="corner-readout" id="readoutPanel">
             <div id="crosswindMetric"><span>XW</span><strong>--</strong><small>Select runway and wind</small></div>
             <div id="headwindMetric"><span>HW</span><strong>--</strong><small>--</small></div>
