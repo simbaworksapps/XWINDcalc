@@ -624,6 +624,15 @@ function tailwindValueClass(signedHeadwind) {
   return tailwindState(tailwind);
 }
 
+function formatAlongComponent(signedHeadwind) {
+  const value = Math.round(Number(signedHeadwind || 0));
+  return value < 0 ? `TW ${Math.abs(value)} kt` : `HW ${value} kt`;
+}
+
+function formatAlongValue(signedHeadwind) {
+  return `${Math.abs(Math.round(Number(signedHeadwind || 0)))} kt`;
+}
+
 function formatKt(n) {
   return `${Math.round(n)} kt`;
 }
@@ -667,11 +676,14 @@ function updateSelectedRunwayBadge() {
 
 function updateClockCompare(items) {
   const cells = els.clockCompare?.querySelectorAll("b");
+  const labels = els.clockCompare?.querySelectorAll("span");
   if (!cells?.length) return;
   items.forEach((value, index) => {
     if (!cells[index]) return;
     const text = typeof value === "object" ? value.text : value;
     const state = typeof value === "object" ? value.state : "";
+    const label = typeof value === "object" ? value.label : "";
+    if (label && labels?.[index]) labels[index].textContent = label;
     cells[index].textContent = text;
     cells[index].className = state ? `value-${state}` : "";
   });
@@ -722,7 +734,7 @@ function updateMetrics(result, gustResult, wind) {
   updateSelectedRunwayBadge();
   if (!selectedRunway) {
     updateClockWindArrow(null);
-    updateClockCompare(["--", "--", "--", "--", "--", "--"]);
+    updateClockCompare(["--", "--", "--", { label: "HW", text: "--" }, "--", "--"]);
     updateClockFormula("--", "XW --");
     setMetric(els.crosswindMetric, "XW", "--", "Select runway", "");
     setMetric(els.headwindMetric, "HW", "--", "--", "");
@@ -731,7 +743,7 @@ function updateMetrics(result, gustResult, wind) {
   }
   if (!wind) {
     updateClockWindArrow(null);
-    updateClockCompare(["--", runwayClockText(selectedRunway), "--", "--", "--", "--"]);
+    updateClockCompare(["--", runwayClockText(selectedRunway), "--", { label: "HW", text: "--" }, "--", "--"]);
     updateClockFormula("--", "XW --");
     setMetric(els.crosswindMetric, "XW", "--", "Enter wind", "");
     setMetric(els.headwindMetric, "HW", "--", "--", "");
@@ -740,7 +752,7 @@ function updateMetrics(result, gustResult, wind) {
   }
   if (wind.variable) {
     updateClockWindArrow(null);
-    updateClockCompare([formatWindBadge(wind).replace("Wind ", ""), runwayClockText(selectedRunway), `0-${formatKt(wind.gust || wind.speed)}`, "VRB", "VRB", "Full possible"]);
+    updateClockCompare([formatWindBadge(wind).replace("Wind ", ""), runwayClockText(selectedRunway), `0-${formatKt(wind.gust || wind.speed)}`, { label: "HW", text: "VRB" }, "VRB", "Full possible"]);
     updateClockFormula("VRB", "XW variable", `VRB x full possible = 0-${formatKt(wind.gust || wind.speed)}`);
     setMetric(els.crosswindMetric, "XW", `0-${formatKt(wind.gust || wind.speed)}`, "Variable wind, worst case possible", "warn");
     setMetric(els.headwindMetric, "HW", "Variable", "Use runway ranking cautiously", "warn");
@@ -753,10 +765,10 @@ function updateMetrics(result, gustResult, wind) {
   setMetric(els.crosswindMetric, "XW", `${displayXw} kt`, `${result.side} | limit ${els.xwindLimit.value}`, xState);
   const isTail = checkResult.tailwind > 0;
   const displayAlong = Math.round(checkResult.signedHeadwind);
-  const along = `${displayAlong} kt`;
+  const along = formatAlongValue(displayAlong);
   const tailCheck = checkResult.tailwind;
   const hState = isTail ? tailwindState(tailCheck) : "";
-  setMetric(els.headwindMetric, "HW", along, `Runway ${selectedRunway.ident} ${Math.round(selectedRunway.heading).toString().padStart(3, "0")}°`, hState);
+  setMetric(els.headwindMetric, displayAlong < 0 ? "TW" : "HW", `${Math.abs(displayAlong)} kt`, `Runway ${selectedRunway.ident} ${Math.round(selectedRunway.heading).toString().padStart(3, "0")}°`, hState);
   const clockAngle = clockMethodAngle(result);
   const clockSpeed = gustResult ? gustResult.speed : result.speed;
   const estimate = clockEstimate(clockAngle, clockSpeed);
@@ -773,7 +785,7 @@ function updateMetrics(result, gustResult, wind) {
     formatWindBadge(wind).replace("Wind ", ""),
     runwayClockText(selectedRunway),
     { text: `${displayXw} kt`, state: clockXwState },
-    { text: along, state: tailwindValueClass(displayAlong) },
+    { label: displayAlong < 0 ? "TW" : "HW", text: along, state: tailwindValueClass(displayAlong) },
     clockAngleDerivation(result),
     clockText
   ]);
@@ -826,7 +838,7 @@ function renderRanking(wind) {
     const xwState = item.result ? limitState(Math.round(item.result.cross), els.xwindLimit.value) : "";
     const hwState = item.result ? tailwindValueClass(Math.round(item.result.signedHeadwind)) : "";
     const components = item.result
-      ? `<span class="${xwState ? `value-${xwState}` : ""}">XW ${Math.round(item.result.cross)} kt</span><span class="${hwState ? `value-${hwState}` : ""}">HW ${Math.round(item.result.signedHeadwind)} kt</span><span>${Math.round(item.result.angle)}°</span>`
+      ? `<span class="${xwState ? `value-${xwState}` : ""}">XW ${Math.round(item.result.cross)} kt</span><span class="${hwState ? `value-${hwState}` : ""}">${formatAlongComponent(item.result.signedHeadwind)}</span><span>${Math.round(item.result.angle)}°</span>`
       : `<span>XW --</span><span>HW --</span><span>--&deg;</span>`;
     row.innerHTML = `<span class="rank-left"><span class="rank-rwy">${r.ident}</span><span class="pill ${status}">${statusLabel(status, isBest)}</span></span><span><span class="rank-main">${detail}</span><span class="rank-wind">${windLine}</span><span class="rank-sub">${components}</span></span>`;
     row.addEventListener("click", () => {
