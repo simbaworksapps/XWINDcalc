@@ -634,6 +634,15 @@ button:active,
   user-select: none;
 }
 
+.wind-dragging {
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.wind-dragging #compassSvg {
+  touch-action: none;
+}
+
 #compassSvg *,
 .wind-dragging,
 .wind-dragging * {

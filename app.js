@@ -1416,6 +1416,7 @@ function initWindKeypad() {
 function initWindDrag() {
   let dragging = false;
   let touchDragging = false;
+  let activeTouchId = null;
   const isWindDragTarget = (target) => ["wind-arrow-hit", "wind-arrow-visible", "wind-guide-hit", "wind-guide-visible"]
     .some((className) => target?.classList?.contains(className));
   const showDragMessage = () => {
@@ -1427,6 +1428,10 @@ function initWindDrag() {
     const heading = compassHeadingFromPointer(event);
     if (!heading) return;
     setWindDirection(heading);
+  };
+  const activeTouch = (event) => {
+    const touches = [...Array.from(event.touches), ...Array.from(event.changedTouches)];
+    return touches.find((touch) => touch.identifier === activeTouchId) || null;
   };
   const startDrag = (event) => {
     window.getSelection?.()?.removeAllRanges();
@@ -1451,24 +1456,41 @@ function initWindDrag() {
     if (!isWindDragTarget(event.target) || !event.touches.length) return;
     event.preventDefault();
     touchDragging = true;
-    startDrag(event.touches[0]);
+    activeTouchId = event.changedTouches[0]?.identifier ?? event.touches[0].identifier;
+    startDrag(event.changedTouches[0] || event.touches[0]);
   }, { passive: false });
-  els.compassSvg.addEventListener("touchmove", (event) => {
+  const onTouchMove = (event) => {
     if (!touchDragging || !event.touches.length) return;
     event.preventDefault();
-    updateFromPointer(event.touches[0]);
-  }, { passive: false });
+    const touch = activeTouch(event) || event.touches[0];
+    updateFromPointer(touch);
+  };
+  els.compassSvg.addEventListener("touchmove", onTouchMove, { passive: false });
   const stop = (event) => {
     dragging = false;
     touchDragging = false;
+    activeTouchId = null;
     document.body.classList.remove("wind-dragging");
     window.getSelection?.()?.removeAllRanges();
     if (event.pointerId !== undefined) els.compassSvg.releasePointerCapture?.(event.pointerId);
+  };
+  const onDocumentTouchMove = (event) => {
+    if (!touchDragging) return;
+    event.preventDefault();
+    const touch = activeTouch(event);
+    if (touch) updateFromPointer(touch);
+  };
+  const onDocumentTouchEnd = (event) => {
+    if (!touchDragging) return;
+    if (activeTouchId === null || activeTouch(event)) stop(event);
   };
   els.compassSvg.addEventListener("pointerup", stop);
   els.compassSvg.addEventListener("pointercancel", stop);
   els.compassSvg.addEventListener("touchend", stop);
   els.compassSvg.addEventListener("touchcancel", stop);
+  document.addEventListener("touchmove", onDocumentTouchMove, { passive: false, capture: true });
+  document.addEventListener("touchend", onDocumentTouchEnd, { passive: false, capture: true });
+  document.addEventListener("touchcancel", onDocumentTouchEnd, { passive: false, capture: true });
 }
 
 function boot() {
