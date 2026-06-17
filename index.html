@@ -27,7 +27,7 @@
       </div>
     </div>
     <div class="header-actions">
-      <div class="cao-line">CAO 16JUN26</div>
+      <div class="cao-line">CAO 17JUN26</div>
     </div>
   </header>
   <main class="layout">
@@ -123,16 +123,17 @@
       </div>
       <div class="limits-grid">
         <div class="field">
-          <label for="xwindLimit">Crosswind Limit</label>
+          <label for="xwindLimit">XW Limit</label>
           <input id="xwindLimit" type="number" min="0" max="99" inputmode="numeric">
         </div>
         <div class="field">
-          <label for="tailwindLimit">Tailwind Limit</label>
+          <label for="tailwindLimit">TW Limit</label>
           <input id="tailwindLimit" type="number" min="0" max="99" inputmode="numeric">
         </div>
       </div>
-      <div class="callout">Limits are saved on this device and used for the green/yellow/red runway status.</div>
-      <div class="callout data-note">Data: FAA NASR 11JUN26 for U.S. airports using FAA chart variation where available; MAGVAR 2025 for military/coordinate fallback; curated chart-verified overrides; OurAirports worldwide fallback. Chart-verified headings are expected within about 1°. Unverified fallback headings may vary by 5° or more. Verify runway data with current official publications.</div>
+      <div class="callout">Limits are saved on this device and control status colors.</div>
+      <div class="callout data-note">Airport and runway data comes from the FAA airport database for U.S. airports when available. Some military, chart-verified, and non-U.S. fields use the best available fallback data. Runway headings should be close, but always verify with current official publications.</div>
+      <div class="callout data-note">XW: wind x sine(angle)<br>HW/TW: wind x cosine(angle)<br>Rounding: nearest knot; .5 rounds up. Gust factor is considered.</div>
       <div class="suggestion-box">
         <label for="suggestionText">Suggestion or Concern</label>
         <textarea id="suggestionText" rows="4" placeholder="What did you notice?"></textarea>
@@ -194,11 +195,6 @@
         <text x="38" y="165" class="clock-label" text-anchor="middle">45°</text>
         <text x="34" y="183" class="clock-small" text-anchor="middle">3/4</text>
         <text x="34" y="198" class="clock-small" text-anchor="middle">Xwind</text>
-        <text x="0" y="300" class="clock-exact-label">Exact clock</text>
-        <text x="78" y="300" class="clock-nerd-text">NERD</text>
-        <text id="clockExactFraction" x="0" y="318" class="clock-exact-value">--</text>
-        <text x="42" y="318" class="clock-exact-value clock-exact-divider" text-anchor="middle">|</text>
-        <text id="clockExactXw" x="50" y="318" class="clock-exact-value">XW --</text>
         <text x="318" y="318" class="clock-technique-signature" text-anchor="end">technique</text>
       </svg>
       <div id="clockCompare" class="clock-compare">

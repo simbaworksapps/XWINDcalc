@@ -28,9 +28,7 @@ const els = {
   selectedRunwayBadge: $("selectedRunwayBadge"),
   bestRunwayBadge: $("bestRunwayBadge"),
   clockCompare: $("clockCompare"),
-  clockExactFraction: $("clockExactFraction"),
   clockWindArrow: $("clockWindArrow"),
-  clockExactXw: $("clockExactXw"),
   clockFormulaValues: $("clockFormulaValues"),
   installBtn: $("installBtn"),
   installMessage: $("installMessage"),
@@ -707,25 +705,8 @@ function updateClockWindArrow(result) {
   arrow.removeAttribute("hidden");
 }
 
-function updateClockFormula(fraction, xwText, valuesText = "-- x -- = --") {
-  if (els.clockExactFraction) els.clockExactFraction.textContent = fraction;
-  if (els.clockExactXw) els.clockExactXw.textContent = xwText;
+function updateClockFormula(valuesText = "-- x -- = --") {
   if (els.clockFormulaValues) els.clockFormulaValues.textContent = valuesText;
-}
-
-function gcd(a, b) {
-  let x = Math.abs(a);
-  let y = Math.abs(b);
-  while (y) [x, y] = [y, x % y];
-  return x || 1;
-}
-
-function clockFractionText(angle) {
-  const numerator = Math.max(0, Math.min(60, Math.round(angle)));
-  if (numerator === 0) return "0";
-  if (numerator === 60) return "1";
-  const divisor = gcd(numerator, 60);
-  return `${numerator / divisor}/${60 / divisor}`;
 }
 
 function updateMetrics(result, gustResult, wind) {
@@ -735,7 +716,7 @@ function updateMetrics(result, gustResult, wind) {
   if (!selectedRunway) {
     updateClockWindArrow(null);
     updateClockCompare(["--", "--", "--", { label: "HW", text: "--" }, "--", "--"]);
-    updateClockFormula("--", "XW --");
+    updateClockFormula();
     setMetric(els.crosswindMetric, "XW", "--", "Select runway", "");
     setMetric(els.headwindMetric, "HW", "--", "--", "");
     setMetric(els.angleMetric, "Angle", "--", "Clock method", "");
@@ -744,7 +725,7 @@ function updateMetrics(result, gustResult, wind) {
   if (!wind) {
     updateClockWindArrow(null);
     updateClockCompare(["--", runwayClockText(selectedRunway), "--", { label: "HW", text: "--" }, "--", "--"]);
-    updateClockFormula("--", "XW --");
+    updateClockFormula();
     setMetric(els.crosswindMetric, "XW", "--", "Enter wind", "");
     setMetric(els.headwindMetric, "HW", "--", "--", "");
     setMetric(els.angleMetric, "Angle", "--", "Clock method", "");
@@ -753,7 +734,7 @@ function updateMetrics(result, gustResult, wind) {
   if (wind.variable) {
     updateClockWindArrow(null);
     updateClockCompare([formatWindBadge(wind).replace("Wind ", ""), runwayClockText(selectedRunway), `0-${formatKt(wind.gust || wind.speed)}`, { label: "HW", text: "VRB" }, "VRB", "Full possible"]);
-    updateClockFormula("VRB", "XW variable", `VRB x full possible = 0-${formatKt(wind.gust || wind.speed)}`);
+    updateClockFormula(`VRB x full possible = 0-${formatKt(wind.gust || wind.speed)}`);
     setMetric(els.crosswindMetric, "XW", `0-${formatKt(wind.gust || wind.speed)}`, "Variable wind, worst case possible", "warn");
     setMetric(els.headwindMetric, "HW", "Variable", "Use runway ranking cautiously", "warn");
     setMetric(els.angleMetric, "Angle", "VRB", "Exact angle unavailable", "warn");
@@ -773,12 +754,8 @@ function updateMetrics(result, gustResult, wind) {
   const clockSpeed = gustResult ? gustResult.speed : result.speed;
   const estimate = clockEstimate(clockAngle, clockSpeed);
   const clockText = `${estimate.text.replace(/^about /, "")} (${formatKt(estimate.value)})`;
-  const exactSteady = Math.round(result.speed * clockAngle / 60);
-  const exactGust = gustResult ? Math.round(gustResult.speed * clockAngle / 60) : null;
-  const clockFraction = clockFractionText(clockAngle);
-  const exactXw = exactGust !== null ? exactGust : exactSteady;
   const clockGate = estimate.text === "full xwind" ? "1" : estimate.text;
-  updateClockFormula(clockFraction, `XW ${exactXw} kt`, `${formatKt(clockSpeed)} x ${clockGate} = ${formatKt(estimate.value)} XW`);
+  updateClockFormula(`${formatKt(clockSpeed)} x ${clockGate} = ${formatKt(estimate.value)} XW`);
   updateClockWindArrow(result);
   const clockXwState = limitState(gustResult ? gustResult.cross : result.cross, els.xwindLimit.value);
   updateClockCompare([

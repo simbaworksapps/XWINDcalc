@@ -534,7 +534,7 @@ button:active,
 .manual-grid,
 .limits-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -1180,33 +1180,6 @@ button:active,
   text-transform: uppercase;
 }
 
-.clock-exact-label {
-  fill: var(--dim);
-  font-size: 11px;
-  font-weight: 820;
-  opacity: .62;
-  text-transform: uppercase;
-}
-
-.clock-nerd-text {
-  fill: var(--dim);
-  font-size: 6px;
-  font-weight: 900;
-  opacity: .55;
-  letter-spacing: .08em;
-}
-
-.clock-exact-value {
-  fill: var(--dim);
-  font-size: 12px;
-  font-weight: 820;
-  opacity: .68;
-}
-
-.clock-exact-divider {
-  opacity: .72;
-}
-
 .clock-technique-signature {
   fill: var(--dim);
   font-family: "Segoe Script", "Bradley Hand ITC", "Segoe Print", cursive;
@@ -1566,7 +1539,6 @@ button:active,
   }
 
   .manual-grid,
-  .limits-grid,
   .metrics-grid {
     grid-template-columns: 1fr;
   }
