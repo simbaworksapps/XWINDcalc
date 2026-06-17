@@ -1,6 +1,33 @@
 // Curated chart-verified runway overrides.
 // These records replace generated runway bearings when chart-published values are preferred.
 window.XWIND_AIRPORT_OVERRIDES = {
+  KDYS: {
+    source: "Chart verified 17JUN26",
+    runways: [
+      {
+        id: "16/34",
+        le: "16",
+        he: "34",
+        leHdg: 163.4,
+        heHdg: 343.4,
+        length: 13500,
+        width: 300,
+        surface: "CONC",
+        lighted: true
+      },
+      {
+        id: "164/344",
+        le: "164",
+        he: "344",
+        leHdg: 164.6,
+        heHdg: 344.6,
+        length: 3498,
+        width: 80,
+        surface: "ASPH",
+        lighted: false
+      }
+    ]
+  },
   EGUN: {
     source: "Chart verified 15JUN26",
     runways: [
